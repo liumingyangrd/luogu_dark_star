@@ -1,11 +1,5 @@
-/* ══════════════════════════════════════════════════════════════
-   洛谷 · 菲林斯主题 —— Lentille 设计令牌覆盖（深色「夜巡」）
-   由 tools/make_tokens.py 生成，请勿手改；改色请改该脚本。
-   !important 用于压过洛谷页内 <style> 的 :root 定义；
-   元素自身的 .lcolor-var-* 声明仍可正常覆盖这些值。
-   ══════════════════════════════════════════════════════════════ */
-/* 用 html:not(.flins-light) 而不是 :root：浅色模式直接让这些
-   深色色阶整体失效，回落到洛谷原值，避免逐个还原。 */
+ 
+ 
 html:not(.flins-light) {
   --lcolor--lapis-1: 24, 34, 73 !important; --lfe-color--lapis-1: #182249 !important;
   --lcolor--lapis-2: 39, 55, 107 !important; --lfe-color--lapis-2: #27376b !important;
@@ -78,7 +72,7 @@ html:not(.flins-light) {
   --lcolor--error: 255, 110, 122 !important; --lfe-color--error: #FF6E7A !important;
 }
 
-/* ── 强调色预设：雷紫 ── */
+ 
 html.flins-accent-volt {
   --lcolor--primary: 156, 140, 255 !important; --lfe-color--primary: #9C8CFF !important;
   --lcolor--primary-bg: 16, 42, 62 !important; --lfe-color--primary-bg: #102A3E !important;
@@ -91,7 +85,7 @@ html.flins-accent-volt {
   --lcolor--error: 255, 110, 122 !important; --lfe-color--error: #FF6E7A !important;
 }
 
-/* ── 强调色预设：提灯金 ── */
+ 
 html.flins-accent-lamp {
   --lcolor--primary: 240, 192, 112 !important; --lfe-color--primary: #F0C070 !important;
   --lcolor--primary-bg: 16, 42, 62 !important; --lfe-color--primary-bg: #102A3E !important;
@@ -104,7 +98,7 @@ html.flins-accent-lamp {
   --lcolor--error: 255, 110, 122 !important; --lfe-color--error: #FF6E7A !important;
 }
 
-/* ── 强调色预设：洛谷蓝 ── */
+ 
 html.flins-accent-luogu {
   --lcolor--primary: 52, 152, 219 !important; --lfe-color--primary: #3498DB !important;
   --lcolor--primary-bg: 16, 42, 62 !important; --lfe-color--primary-bg: #102A3E !important;
@@ -117,7 +111,7 @@ html.flins-accent-luogu {
   --lcolor--error: 255, 110, 122 !important; --lfe-color--error: #FF6E7A !important;
 }
 
-/* ── 浅色「霜晨」：家族色阶沿用洛谷原值，只改语义色 ── */
+ 
 html.flins-light {
   --lcolor--primary: 14, 143, 152 !important; --lfe-color--primary: #0E8F98 !important;
   --lcolor--primary-bg: 221, 243, 245 !important; --lfe-color--primary-bg: #DDF3F5 !important;
@@ -130,11 +124,7 @@ html.flins-light {
   --lcolor--error: 217, 74, 92 !important; --lfe-color--error: #D94A5C !important;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   工具类重写：洛谷把 .lcolor--X / .lcolor-bg-X 的颜色硬编码成
-   rgb(...)，不引用变量，所以必须在这里改成引用 --lcolor--*，
-   否则难度标签、状态色、页脚底色都不会跟随主题。
-   ══════════════════════════════════════════════════════════════ */
+ 
 .lcolor--lapis-1 { color: rgb(var(--lcolor--lapis-1)) !important; }
 .lcolor-bg-lapis-1 { background-color: rgb(var(--lcolor--lapis-1)) !important; }
 .lcolor--lapis-2 { color: rgb(var(--lcolor--lapis-2)) !important; }

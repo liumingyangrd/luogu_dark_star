@@ -1,13 +1,13 @@
-# 洛谷 · 菲林斯主题「终夜长茔」
+# 洛谷 · 暗星
 
-> 给 [洛谷](https://www.luogu.com.cn/) 做的一套《原神》菲林斯（Flins）主题。
-> 深靛蓝夜色 + 提灯冷蓝焰 + 金色新月 + 灯塔剪影。
+> 给 [洛谷](https://www.luogu.com.cn/) 做的一套深色主题。
+> 深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。
 > **背景图片可以随时换** —— 内置插画 / 图片直链 / 拖本地文件，三种都行。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tampermonkey](https://img.shields.io/badge/Tampermonkey-%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85-4C6FE8.svg)](https://raw.githubusercontent.com/liumingyangrd/luogu_flins_theme/main/dist/flins.user.js)
+[![Tampermonkey](https://img.shields.io/badge/Tampermonkey-%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85-4C6FE8.svg)](https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js)
 [![Chrome MV3](https://img.shields.io/badge/Chrome%20%2F%20Edge-MV3%20%E6%89%A9%E5%B1%95-60A0C0.svg)](dist/flins-extension)
-[![Release](https://img.shields.io/github/v/release/liumingyangrd/luogu_flins_theme?color=0B0F2B&label=version)](https://github.com/liumingyangrd/luogu_flins_theme/releases)
+[![Release](https://img.shields.io/github/v/release/liumingyangrd/luogu_dark_star?color=0B0F2B&label=version)](https://github.com/liumingyangrd/luogu_dark_star/releases)
 
 **在真实的 luogu.com.cn 上截图，不是离线预览：**
 
@@ -73,7 +73,7 @@
 ### A. 油猴脚本（推荐）
 
 1. 浏览器装 [Tampermonkey](https://www.tampermonkey.net/)（Violentmonkey / ScriptCat 也行）。
-2. 点这个链接安装：[`dist/flins.user.js`](https://raw.githubusercontent.com/liumingyangrd/luogu_flins_theme/main/dist/flins.user.js)，
+2. 点这个链接安装：[`dist/flins.user.js`](https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js)，
    或把仓库里的 `dist/flins.user.js` 直接拖进浏览器窗口，按提示安装。
 3. 打开任意洛谷页面。右下角会出现一个**灯形按钮**，点开就是设置面板。
 
@@ -190,15 +190,15 @@
 ## 目录结构
 
 ```
-luogu-flins-theme/
+luogu_dark_star/
 ├─ dist/                        ← 要用的东西都在这里（成品）
-│  ├─ flins.user.js             油猴脚本（约 431 KB，样式表 + 背景图 + 徽记全部内嵌）
+│  ├─ flins.user.js             油猴脚本（约 365 KB，样式表 + 背景图 + 徽记全部内嵌）
 │  ├─ flins-extension/          Chrome / Edge 扩展（MV3，免油猴）
 │  │  ├─ manifest.json
 │  │  ├─ content.js             与 flins.user.js 同一份脚本
 │  │  └─ icons/
-│  ├─ flins.css                 等价的纯 CSS（Stylus 用，约 158 KB）
-│  ├─ flins-emblem.svg          「誓灯」徽记
+│  ├─ flins.css                 等价的纯 CSS（Stylus 用，约 109 KB）
+│  ├─ flins-emblem.svg          徽记
 │  └─ assets/                   可直接上传到洛谷图床的完整尺寸背景图
 ├─ src/                         ← 源码（构建输入）
 │  ├─ flins.css                 主题主样式表（含全部组件重塑与装饰）
@@ -382,41 +382,20 @@ node tools/check-extension.mjs chrome
 
 ---
 
-## 配色依据
+## 配色
 
-角色设定是**官方资料**；色值是**从官方立绘采样推断的近似值**，官方从未公布过标准色值。
+主题围绕五个视觉锚点做的：**提灯 · 冷蓝火焰 · 金色新月 · 灯塔剪影 · 深靛蓝夜色**。
 
-| 项目 | 结论 | 来源 |
-|---|---|---|
-| 元素 / 武器 / 稀有度 | 雷元素 · 长柄武器 · 5★ | [HoYoWiki](https://wiki.hoyolab.com/pc/genshin/entry/8398?lang=zh-tw) |
-| 所属 | 挪德卡莱「执灯人」；看守「终夜长茔」的灯塔与墓园 | [BWIKI](https://wiki.biligame.com/ys/%E8%8F%B2%E6%9E%97%E6%96%AF) |
-| 官方称号 | 「诡灯陌影」 | 官方个人信息图 |
-| 实装版本 | 6.0，2025-09-30 | [官方角色预告](https://ys.mihoyo.com/main/news/detail/159949) |
-| 官方宣传语 | 「墓园灯火，引向深邃之暗」 | 官方立绘 |
-| 命之座 | 夜行灯座 | 官方个人信息图 |
-
-**五个视觉锚点**（主题就是围绕它们做的）：
-**提灯 · 冷蓝火焰 · 金色新月 · 灯塔剪影 · 深靛蓝夜色**。
-
-采样得到的近似色（**推断值**，配比约：深靛蓝底 70% / 冷蓝青光 20% / 金 ≤10%）：
+配比约：深靛蓝底 70% / 冷蓝青光 20% / 金 ≤10%。
 
 ```
 夜色    #0B0F2B  #101040  #202060  #283078
 冷蓝火焰 #4C6FE8  #60A0C0  #90D0E0  #60E0F0
 金      #C89020  #E0B020  #F0C070
-服色    #07070C  #181828  银 #B9BCC6  #F2F4F8
+深色    #07070C  #181828  银 #B9BCC6  #F2F4F8
 ```
 
-沿用到的官方文案（都核对过出处）：
-
-- 页脚铭牌：**『诡灯陌影』· 菲林斯 · 挪德卡莱执灯人 · 掌灯暗行**
-  （称号 + 组织 + 生活天赋名，全是官方词，没有编造台词）
-- 示例代码注释：「灯就是用来照亮黑暗的，不是吗？」——官方角色介绍图
-- 主题内不使用任何未核实的「角色语录」
-
-> ⚠️ 顺带排除几个常见但**没有官方依据**的母题：钟表 / 怀表、蒸汽朋克、俄式民族纹样、
-> 治安官制服。菲林斯的视觉语言是**冷调近黑的优雅礼服 + 奇幻哥特**，斯拉夫元素只体现在
-> 姓名与贵族设定上。
+这套色值定义在 `src/flins.css` 顶部「0. 主题参数」一节，改那几行就能整体换色。
 
 **洛谷前端机制**（直接读线上产物，非二手资料）：
 
@@ -443,10 +422,9 @@ node tools/check-extension.mjs chrome
 - **代码**：MIT，见 [LICENSE](LICENSE)。可自由使用、修改、分发、商用，保留版权声明即可。
   （`LICENSE` 文件是标准 MIT 全文，**没有**附加条款 —— 这样 GitHub 才能正确识别出 MIT。
   第三方权利归属统一写在本节，不写进 `LICENSE`。）
-- **背景插画与「誓灯」徽记**：由本仓库的脚本（`tools/make_backgrounds.py`）程序化生成，
-  不是从官方素材抠的，可随本项目一起自由使用。
-- **角色相关**：《原神》菲林斯的名字、形象与官方文案版权归**米哈游**所有。
+- **背景插画与徽记**：由本仓库的脚本（`tools/make_backgrounds.py`）程序化生成，
+  不是从任何官方素材抠的，可随本项目一起自由使用。
 - **站点相关**：洛谷（luogu.com.cn）的商标与前端样式版权归**洛谷**所有；
   `preview/vendor/` 里的样式快照仅为离线调试复现布局所用。
-- 本项目是**非官方同人美化作品**，与米哈游、洛谷均无隶属或合作关系，
-  也不代表任何一方立场。若权利方有异议，请联系删除。
+- 本项目是**非官方美化作品**，与洛谷无隶属或合作关系，也不代表其立场。
+  若权利方有异议，请联系删除。

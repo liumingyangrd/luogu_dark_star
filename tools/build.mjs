@@ -137,9 +137,9 @@ assertFresh(join(EXT, 'content.js'), cssNeedle, 'dist/flins-extension/content.js
 
 const manifest = {
   manifest_version: 3,
-  name: '洛谷 · 菲林斯主题「终夜长茔 · 夜巡」',
+  name: '洛谷 · 暗星',
   version: extVersion,
-  description: '为洛谷换上《原神》菲林斯主题：深靛蓝夜色 + 提灯冷蓝焰 + 金色新月 + 灯塔剪影。背景图片可在设置面板里随时更换。',
+  description: '为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。背景图片可在设置面板里随时更换。',
   icons: { 16: 'icons/16.png', 48: 'icons/48.png', 128: 'icons/128.png' },
   content_scripts: [
     {
