@@ -59,7 +59,7 @@
 - **毛玻璃 / 装饰 / 动效**可单独关闭，尊重系统「减弱动态效果」与洛谷自己的低端机降级。
 - **三处自定义图片**：右下角小灯、左上角誓灯徽记、标题小灯都能换成自己的图
   （建议正方形、透明背景的 PNG）。
-- **配置可导出**：面板底部「复制配置」输出一段 JSON，方便备份或分享。
+- **配置可导出 / 导入**：面板底部「配置备份」能把当前设置导出成 JSON 文件，换设备或重装后选同一个文件即可原样还原（含背景图设置）。
 - **带一套真站验证工具**：CDP 注入诊断、白块审计、按坐标查「到底是谁给它上的色」。
 - **零依赖、零遥测**：脚本里没有任何 `fetch` / `XMLHttpRequest` / `sendBeacon` / `WebSocket`
   调用（可自行 `grep` 验证），设置只写进油猴存储或 `localStorage`。
@@ -192,12 +192,12 @@
 ```
 luogu_dark_star/
 ├─ dist/                        ← 要用的东西都在这里（成品）
-│  ├─ flins.user.js             油猴脚本（约 365 KB，样式表 + 背景图 + 徽记全部内嵌）
+│  ├─ flins.user.js             油猴脚本（约 378 KB，样式表 + 背景图 + 徽记全部内嵌）
 │  ├─ flins-extension/          Chrome / Edge 扩展（MV3，免油猴）
 │  │  ├─ manifest.json
 │  │  ├─ content.js             与 flins.user.js 同一份脚本
 │  │  └─ icons/
-│  ├─ flins.css                 等价的纯 CSS（Stylus 用，约 109 KB）
+│  ├─ flins.css                 等价的纯 CSS（Stylus 用，约 118 KB）
 │  ├─ flins-emblem.svg          徽记
 │  └─ assets/                   可直接上传到洛谷图床的完整尺寸背景图
 ├─ src/                         ← 源码（构建输入）

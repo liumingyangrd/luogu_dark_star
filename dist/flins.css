@@ -3032,7 +3032,219 @@ html.flins-layout-flins .actions.left-mode {
   html.flins-layout-flins .actions.left-mode { display: none !important; }
 }
 
- 
+/* ──────────────────────────────────────────────────────────────────────────
+   19. 帮助中心 help.luogu.com.cn（Docusaurus）
+
+   这个子站不是洛谷外壳，而是 Docusaurus 生成的文档站：
+     · 顶栏 nav.navbar 是纯白 rgb(255,255,255)
+     · 代码块 .prism-code / .codeBlockContainer 是 rgb(246,248,250)
+     · 行内 code 是 rgb(246,247,248)
+     · 正文里的图片卡是白底
+   主题之前只按 .theme-page / .l-card 这些洛谷类名写样式，到这里一个都没有，
+   于是深色页面里插着一条白顶栏 + 一堆白底代码块。
+
+   适配方式：按 Docusaurus 自己的类名重新铺深色，颜色一律引用主题变量，
+   这样深浅两形态与强调色切换都能跟着走。
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 19.1 顶栏 / 侧栏 / 页脚 --------------------------------------------- */
+html.flins-layout-flins .navbar,
+html.flins-layout-flins header.navbar {
+  background: rgba(11, 16, 39, 0.92) !important;
+  border-bottom: 1px solid var(--flins-border) !important;
+  box-shadow: 0 10px 30px -26px rgba(0, 0, 0, 0.9) !important;
+  -webkit-backdrop-filter: var(--flins-glass-blur);
+  backdrop-filter: var(--flins-glass-blur);
+}
+html.flins-layout-flins .navbar__brand,
+html.flins-layout-flins .navbar__title,
+html.flins-layout-flins .navbar__link {
+  color: var(--flins-heading) !important;
+}
+html.flins-layout-flins .navbar__link:hover,
+html.flins-layout-flins .navbar__link--active {
+  color: var(--flins-accent-soft) !important;
+}
+html.flins-layout-flins .theme-doc-sidebar-container,
+html.flins-layout-flins .theme-doc-sidebar-menu {
+  background: transparent !important;
+  border-right: 1px solid var(--flins-border) !important;
+}
+html.flins-layout-flins .menu__link {
+  color: var(--flins-text-muted) !important;
+  border-radius: 8px !important;
+}
+html.flins-layout-flins .menu__link:hover {
+  background: rgba(var(--flins-accent-rgb), 0.1) !important;
+  color: var(--flins-accent-soft) !important;
+}
+html.flins-layout-flins .menu__link--active {
+  background: rgba(var(--flins-accent-rgb), 0.16) !important;
+  color: var(--flins-accent-soft) !important;
+}
+html.flins-layout-flins footer.footer {
+  background: rgba(8, 11, 33, 0.85) !important;
+  border-top: 1px solid var(--flins-border) !important;
+  color: var(--flins-text-dim) !important;
+}
+html.flins-layout-flins footer.footer a { color: var(--flins-text-muted) !important; }
+
+/* 19.2 正文 ---------------------------------------------------------- */
+html.flins-layout-flins .theme-doc-markdown,
+html.flins-layout-flins .markdown {
+  color: var(--flins-text) !important;
+}
+html.flins-layout-flins .theme-doc-markdown h1,
+html.flins-layout-flins .theme-doc-markdown h2,
+html.flins-layout-flins .theme-doc-markdown h3,
+html.flins-layout-flins .theme-doc-markdown h4,
+html.flins-layout-flins .markdown h1,
+html.flins-layout-flins .markdown h2,
+html.flins-layout-flins .markdown h3,
+html.flins-layout-flins .markdown h4 {
+  color: var(--flins-heading) !important;
+  border-bottom-color: var(--flins-border) !important;
+}
+html.flins-layout-flins .theme-doc-markdown a,
+html.flins-layout-flins .markdown a {
+  color: var(--flins-accent-soft) !important;
+}
+html.flins-layout-flins .theme-doc-markdown hr,
+html.flins-layout-flins .markdown hr {
+  border-color: var(--flins-border) !important;
+  background: var(--flins-border) !important;
+}
+html.flins-layout-flins .theme-doc-markdown blockquote,
+html.flins-layout-flins .markdown blockquote {
+  border-left-color: rgba(var(--flins-accent-rgb), 0.55) !important;
+  background: rgba(var(--flins-accent-rgb), 0.06) !important;
+  color: var(--flins-text-muted) !important;
+}
+html.flins-layout-flins .table-of-contents,
+html.flins-layout-flins .table-of-contents__link {
+  color: var(--flins-text-muted) !important;
+}
+html.flins-layout-flins .table-of-contents__link--active,
+html.flins-layout-flins .table-of-contents__link:hover {
+  color: var(--flins-accent-soft) !important;
+}
+
+/* 19.3 行内代码 / 代码块 ---------------------------------------------
+   ⚠️ 只改容器底色，不碰 .token 的颜色 —— Prism 的语法配色要留着，
+      否则代码又会变成一整片单色（主站的提交区踩过这个坑）。 */
+html.flins-layout-flins .theme-doc-markdown code,
+html.flins-layout-flins .markdown code,
+html.flins-layout-flins code:not([class*="codeBlockLines"]) {
+  background: rgba(96, 224, 240, 0.1) !important;
+  border: 1px solid rgba(96, 224, 240, 0.18) !important;
+  color: var(--flins-accent-soft) !important;
+}
+html.flins-layout-flins div[class*="codeBlockContainer"],
+html.flins-layout-flins pre.prism-code,
+html.flins-layout-flins pre[class*="codeBlock"],
+html.flins-layout-flins .theme-code-block {
+  background: rgba(12, 18, 42, 0.82) !important;
+  border: 1px solid var(--flins-border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+html.flins-layout-flins div[class*="codeBlockContainer"] code,
+html.flins-layout-flins pre.prism-code code,
+html.flins-layout-flins pre[class*="codeBlock"] code,
+html.flins-layout-flins .theme-code-block code,
+html.flins-layout-flins code[class*="codeBlockLines"] {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--flins-code-text) !important;
+}
+html.flins-layout-flins div[class*="codeBlockTitle"],
+html.flins-layout-flins div[class*="codeBlockTitle"] * {
+  background: rgba(16, 23, 58, 0.9) !important;
+  border-color: var(--flins-border) !important;
+  color: var(--flins-text-muted) !important;
+}
+html.flins-layout-flins button[class*="copyButton"],
+html.flins-layout-flins .clean-btn {
+  background: rgba(16, 23, 58, 0.9) !important;
+  border: 1px solid var(--flins-border) !important;
+  color: var(--flins-text-muted) !important;
+  border-radius: 8px !important;
+}
+
+/* 19.4 表格 / 提示块 / 图片 ------------------------------------------ */
+html.flins-layout-flins .theme-doc-markdown table,
+html.flins-layout-flins .markdown table {
+  border-color: var(--flins-border) !important;
+}
+html.flins-layout-flins .theme-doc-markdown th,
+html.flins-layout-flins .markdown th {
+  background: rgba(16, 23, 58, 0.75) !important;
+  color: var(--flins-heading) !important;
+  border-color: var(--flins-border) !important;
+}
+html.flins-layout-flins .theme-doc-markdown td,
+html.flins-layout-flins .markdown td {
+  border-color: var(--flins-border) !important;
+  color: var(--flins-text) !important;
+}
+html.flins-layout-flins .theme-doc-markdown tr:nth-child(2n),
+html.flins-layout-flins .markdown tr:nth-child(2n) {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+html.flins-layout-flins .alert,
+html.flins-layout-flins .admonition {
+  border-radius: 12px !important;
+  border-width: 1px !important;
+}
+html.flins-layout-flins .theme-doc-markdown img,
+html.flins-layout-flins .markdown img {
+  border-radius: 12px !important;
+  box-shadow: 0 18px 40px -30px rgba(0, 0, 0, 0.9);
+}
+
+/* 19.5 搜索框 / 快捷键提示 ------------------------------------------- */
+html.flins-layout-flins .navbar [class*="searchBar"],
+html.flins-layout-flins .navbar input,
+html.flins-layout-flins kbd {
+  background: rgba(16, 23, 58, 0.9) !important;
+  border: 1px solid var(--flins-border) !important;
+  color: var(--flins-text) !important;
+  border-radius: 10px !important;
+}
+html.flins-layout-flins kbd {
+  color: var(--flins-text-muted) !important;
+  font-size: 11px !important;
+}
+
+/* 19.6 分页导航 ------------------------------------------------------ */
+html.flins-layout-flins .pagination-nav__link {
+  background: rgba(16, 23, 58, 0.6) !important;
+  border: 1px solid var(--flins-border) !important;
+  border-radius: 12px !important;
+  color: var(--flins-text) !important;
+}
+html.flins-layout-flins .pagination-nav__label {
+  color: var(--flins-heading) !important;
+}
+
+/* 19.7 浅色形态 ------------------------------------------------------ */
+html.flins-light.flins-layout-flins .navbar,
+html.flins-light.flins-layout-flins header.navbar {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+html.flins-light.flins-layout-flins div[class*="codeBlockContainer"],
+html.flins-light.flins-layout-flins pre.prism-code,
+html.flins-light.flins-layout-flins pre[class*="codeBlock"],
+html.flins-light.flins-layout-flins .theme-code-block {
+  background: rgba(244, 247, 253, 0.95) !important;
+}
+html.flins-light.flins-layout-flins .theme-doc-markdown code,
+html.flins-light.flins-layout-flins .markdown code {
+  background: rgba(52, 84, 148, 0.09) !important;
+  border-color: rgba(52, 84, 148, 0.18) !important;
+  color: #1B4A8C !important;
+}
+
 @media print {
   html::before, html::after { display: none !important; }
   html, body { background: #fff !important; color: #000 !important; }

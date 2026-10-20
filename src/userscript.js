@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      1.3.0
+// @version      1.4.0
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -1031,22 +1031,106 @@
 
     
     panelEl.appendChild(el('div', { class: 'flins-foot' }, [
-      el('button', { type: 'button', text: '恢复默认', onclick: () => { cfg = Object.assign({}, DEFAULTS); commit(); } }),
-      el('button', {
-        type: 'button', text: '复制配置',
-        onclick: (e) => {
-          const btn = e.currentTarget;
-          try { navigator.clipboard.writeText(JSON.stringify(cfg)); } catch (err) {   }
-          btn.textContent = '已复制';
-          setTimeout(() => { btn.textContent = '复制配置'; }, 1400);
-        },
-      }),
+      el('button', { type: 'button', text: '恢复默认', onclick: () => { cfg = Object.assign({}, DEFAULTS); commit(); rebuildPanel(); } }),
+    ]));
+
+    const importReport = el('p', { class: 'flins-note flins-import-report', text: '' });
+
+    const btnExport = el('button', {
+      type: 'button', text: '导出配置',
+      onclick: () => {
+        try {
+          const payload = {
+            app: 'luogu-dark-star',
+            schema: 1,
+            exportedAt: new Date().toISOString(),
+            settings: cfg,
+          };
+          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const d = new Date();
+          const p2 = (n) => String(n).padStart(2, '0');
+          a.href = url;
+          a.download = 'luogu-dark-star-' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate())
+            + '-' + p2(d.getHours()) + p2(d.getMinutes()) + '.json';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+          importReport.textContent = '已导出为 JSON 文件，可保存或发给别人。';
+        } catch (err) {
+          importReport.textContent = '导出失败：' + (err && err.message ? err.message : err);
+        }
+      },
+    });
+
+    const cfgFileInput = el('input', {
+      type: 'file', accept: '.json,application/json',
+      style: 'display:none',
+      onchange: (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        const rd = new FileReader();
+        rd.onload = () => applyImport(String(rd.result || ''), f.name);
+        rd.onerror = () => { importReport.textContent = '读文件失败。'; };
+        rd.readAsText(f);
+        e.target.value = '';
+      },
+    });
+
+    const btnImport = el('button', {
+      type: 'button', text: '导入配置',
+      onclick: () => cfgFileInput.click(),
+    });
+
+    panelEl.appendChild(el('div', { class: 'flins-sec' }, [
+      el('div', { class: 'flins-lab' }, [el('span', { text: '配置备份' })]),
+      el('div', { class: 'flins-row' }, [btnExport, btnImport]),
+      cfgFileInput,
+      importReport,
+      el('p', { class: 'flins-note', text: '导出为 JSON 文件；导入时选一个之前导出的 JSON 即可还原（含背景图设置）。' }),
     ]));
 
     panelEl.appendChild(el('p', {
       class: 'flins-note',
       text: '本地上传的图片只存在你自己的浏览器里，不会上传到任何服务器。',
     }));
+  }
+
+  /** 导入配置：读一段 JSON 文本，只接受 DEFAULTS 里存在的键且类型匹配。
+   *  放在 rebuildPanel 外面，因为导入成功后要重建面板，闭包里的函数会失效。 */
+  function applyImport(text, name) {
+    const report = () => (panelEl && panelEl.querySelector('.flins-import-report')) || null;
+    const say = (msg) => { const r = report(); if (r) r.textContent = msg; };
+
+    let data;
+    try { data = JSON.parse(text); } catch (err) {
+      say('导入失败：不是合法的 JSON。');
+      return;
+    }
+    const obj = data && typeof data === 'object' && data.settings && typeof data.settings === 'object'
+      ? data.settings
+      : (data && typeof data === 'object' ? data : null);
+    if (!obj) { say('导入失败：文件里没有配置对象。'); return; }
+
+    const next = Object.assign({}, DEFAULTS);
+    let n = 0;
+    for (const k of Object.keys(DEFAULTS)) {
+      if (!(k in obj)) continue;
+      const a = DEFAULTS[k], b = obj[k];
+      const sameType = b !== null && typeof b === typeof a;
+      const arrayOk = Array.isArray(a) ? Array.isArray(b) : true;
+      if (!sameType || !arrayOk) continue;
+      next[k] = b;
+      n += 1;
+    }
+    if (!n) { say('导入失败：没有可识别的配置项。'); return; }
+
+    cfg = next;
+    commit();
+    rebuildPanel();
+    const r = report();
+    if (r) r.textContent = '已导入 ' + n + ' 项配置' + (name ? '（' + name + '）' : '') + '。';
   }
 
   function readImageFile(file, maxSide, onDone) {
