@@ -1187,7 +1187,10 @@ html:not(.flins-light) .luogu-username.user-name {
 .am-panel-bd a, .am-panel-bd h1, .am-panel-bd h2, .am-panel-bd h3 {
   color: inherit;
 }
-.lg-article a { color: var(--lcolor--link, #7EE8F4) !important; }
+/* 同样放行插件写的行内颜色（题目难度色），否则首页信息流里的题号也会被刷成链接色。
+   开关关掉时（.flins-problem-colors-off）恢复成主题链接色。 */
+.lg-article a:not([style*="color"]) { color: var(--lcolor--link, #7EE8F4) !important; }
+html.flins-problem-colors-off .lg-article a { color: var(--lcolor--link, #7EE8F4) !important; }
 
  
 html:not(.flins-light) .lg-fg-brown     { color: #d9a441 !important; }
@@ -2772,12 +2775,49 @@ html.flins-layout-flins .list-wrap .row-wrap > .row::after {
   background: linear-gradient(180deg, rgba(var(--flins-accent-rgb), 0.95), rgba(var(--flins-accent-rgb), 0.12));
   pointer-events: none;
 }
+/* ⚠️ 不能无条件刷题号/标题颜色：
+   第三方插件（如 luogu_bot1）会把「题目难度色」写成行内 style.color，
+   而这里的 !important 会压过行内样式，导致插件颜色全部失效（用户反馈过）。
+   所以排除「自带行内 color」的元素，把上色权交回行内样式。
+   ⚠️⚠️ 光排除还不够：洛谷在标题链接上用了 -webkit-text-fill-color，
+   它的优先级高于 color，行内 color 会被它盖住（实测行内写了红色，实际仍是白色）。
+   所以对带行内色的链接，把 fill 也设成 inherit，让 color 真正生效。
+
+   这一整套「放行行内色」的行为由面板开关「题号难度色」控制：
+   关掉后 html 会带 .flins-problem-colors-off，下面几条规则把颜色收回来。 */
+html.flins-layout-flins .list-wrap .row-wrap > .row .pid:not([style*="color"]),
+html.flins-layout-flins .list-wrap .row-wrap > .row .title a:not([style*="color"]) {
+  color: var(--flins-heading) !important;
+}
 html.flins-layout-flins .list-wrap .row-wrap > .row .pid,
 html.flins-layout-flins .list-wrap .row-wrap > .row .title a {
-  color: var(--flins-heading) !important;
   font-weight: 650 !important;
 }
-html.flins-layout-flins .list-wrap .row-wrap > .row .title a:hover {
+html.flins-layout-flins .list-wrap .row-wrap > .row .pid[style*="color"],
+html.flins-layout-flins .list-wrap .row-wrap > .row .title a[style*="color"] {
+  -webkit-text-fill-color: inherit !important;
+}
+/* ⚠️⚠️ :visited 是这里真正的元凶。
+   洛谷给已访问过的题号链接写了 :visited 颜色，而浏览器的隐私限制让
+   「行内 color」在 :visited 状态下取不到自身值，实测：
+     行内写 rgb(254,76,97) → computed 变成 rgb(158,158,255)（洛谷的 visited 色）。
+   解法：用属性选择器把 :visited 也一起按住，直接把 fill 设成 currentColor，
+   让行内 color 说了算；再把 :visited 的 color 显式写成 inherit，回到行内值。 */
+html.flins-layout-flins .list-wrap .row-wrap > .row .title a[style*="color"],
+html.flins-layout-flins .list-wrap .row-wrap > .row .title a[style*="color"]:visited,
+html.flins-layout-flins .list-wrap .row-wrap > .row .title a[style*="color"]:link,
+html.flins-layout-flins .list-wrap .row-wrap > .row .pid[style*="color"],
+html.flins-layout-flins .list-wrap .row-wrap > .row .pid[style*="color"]:visited,
+html.flins-layout-flins .list-wrap .row-wrap > .row .pid[style*="color"]:link {
+  -webkit-text-fill-color: currentcolor !important;
+}
+/* 关掉「题号难度色」：行内色一律不再放行，统一回主题色 */
+html.flins-problem-colors-off .list-wrap .row-wrap > .row .pid,
+html.flins-problem-colors-off .list-wrap .row-wrap > .row .title a {
+  color: var(--flins-heading) !important;
+  -webkit-text-fill-color: currentcolor !important;
+}
+html.flins-layout-flins .list-wrap .row-wrap > .row .title a:not([style*="color"]):hover {
   color: var(--flins-accent-soft) !important;
 }
 html.flins-layout-flins .list-wrap .row-wrap > .row .difficulty {
@@ -3120,6 +3160,22 @@ html.flins-layout-flins .footer .background,
 html.flins-layout-flins .background {
   background: transparent !important;
   background-color: transparent !important;
+}
+
+/* 19.4 安全访问中心（「即将离开洛谷」确认页）----------------------------
+   这个页面有一个裸 <pre> 用来展示待跳转的 URL，洛谷给它写死
+   background: rgb(250,250,250)（近白）。而主题把正文文字统一成了 --flins-text
+   （近白），于是「浅灰白底 + 近白字」，URL 几乎完全看不见。
+   这里只补底色，不动别的。 */
+html.flins-layout-flins pre:not([class*="language-"]) {
+  background: rgba(12, 18, 42, 0.82) !important;
+  border: 1px solid var(--flins-border) !important;
+  border-radius: 10px !important;
+  color: var(--flins-text) !important;
+}
+html.flins-light.flins-layout-flins pre:not([class*="language-"]) {
+  background: rgba(244, 247, 253, 0.95) !important;
+  color: #16203C !important;
 }
 
 /* 19.3 左侧竖栏：死灰 → 玻璃竖条 ------------------------------------ */

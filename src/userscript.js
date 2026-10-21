@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      1.4.1
+// @version      1.5.0
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -64,6 +64,7 @@
     ornaments: true,
     motion: true,
     autoPatch: true,         
+    problemColors: true,     
     ornamentStyle: 'lamp',   
     layout: 'flins',         
     navMode: 'inline',       
@@ -417,7 +418,134 @@
 
   let patchDeadline = 0;
 
-   
+  /** 主题自带的「题号 / 题名染色」。
+   *
+   *  数据来源就是洛谷自己：题库列表每行的 .difficulty 徽章带背景色
+   *  （线性的 span 上写着 background-color: rgb(254,76,97) 这种），
+   *  照着它给同一行的 .pid 和 .title a 上色即可，不需要任何外部插件。
+   *
+   *  实现要点：
+   *   · 用行内 !important 写色，因为洛谷给这些链接下了 :visited，
+   *     浏览器隐私限制会让普通行内 color 在 :visited 下读不到自身值
+   *     （实测行内 rgb(254,76,97) → computed rgb(158,158,255)）。
+   *   · 难度色偏暗时（比如 省选 rgb(14,29,105)）在深色底上看不清，
+   *     按当前形态做一次提亮，保证对比度。
+   *   · 只处理能读出难度色的行；读不到就跳过，不瞎猜。 */
+  const DIFF_FALLBACK = {
+    '入门': '#FD4C61',
+    '普及−': '#F39C11',
+    '普及/提高−': '#FFC116',
+    '普及+/提高': '#53C41A',
+    '提高+/省选−': '#3498DB',
+    '省选/NOI−': '#9D3DCF',
+    'NOI/NOI+/CTSC': '#0E1D69',
+    '暂无评定': '#BFBFBF',
+  };
+
+  /** 把 #rrggbb / rgb() 转成 [r,g,b] */
+  function readColor(str) {
+    if (!str) return null;
+    const m = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/.exec(str);
+    if (m) return [+m[1], +m[2], +m[3]];
+    const h = /^#([0-9a-f]{6})$/i.exec(str.trim());
+    if (h) {
+      const v = parseInt(h[1], 16);
+      return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+    }
+    return null;
+  }
+
+  /** 深色形态下把太暗的颜色提亮，保证能看清 */
+  function liftForDark(rgb) {
+    const [r, g, b] = rgb;
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    if (lum >= 70) return rgb;
+    // 按比例往白里混，直到够亮
+    const t = Math.min(0.72, (70 - lum) / Math.max(1, 255 - lum));
+    return [
+      Math.round(r + (255 - r) * t),
+      Math.round(g + (255 - g) * t),
+      Math.round(b + (255 - b) * t),
+    ];
+  }
+
+  function paintProblemRow(row, isLight) {
+    const diff = row.querySelector('.difficulty');
+    if (!diff) return 0;
+    // 难度徽章的颜色写在最内层 span 的 background-color 上
+    const inner = diff.querySelector('span span') || diff.querySelector('span');
+    let rgb = null;
+    if (inner) {
+      rgb = readColor(getComputedStyle(inner).backgroundColor)
+         || readColor(getComputedStyle(inner).borderColor)
+         || readColor(inner.getAttribute('style') || '');
+    }
+    if (!rgb) {
+      const label = (diff.textContent || '').trim().replace(/\s+/g, '');
+      const hex = DIFF_FALLBACK[label];
+      if (!hex) return 0;
+      rgb = readColor(hex);
+    }
+    if (!rgb) return 0;
+    const [r, g, b] = isLight ? rgb : liftForDark(rgb);
+    const css = 'rgb(' + r + ', ' + g + ', ' + b + ')';
+
+    let n = 0;
+    for (const el of row.querySelectorAll('.pid, .title a')) {
+      try {
+        el.style.setProperty('color', css, 'important');
+        el.style.setProperty('-webkit-text-fill-color', css, 'important');
+        el.setAttribute('data-flins-pc', '1');
+        n += 1;
+      } catch (e) { /* 忽略 */ }
+    }
+    return n;
+  }
+
+  /** 扫描全页题号并染色。返回处理了多少个元素。 */
+  function paintProblemColors() {
+    if (!cfg.problemColors) return 0;
+    const isLight = resolveMode() === 'light';
+    let n = 0;
+
+    // 题库列表：每行都有 .difficulty，直接照它染
+    for (const row of document.querySelectorAll('.list-wrap .row-wrap > .row')) {
+      if (!row.querySelector('.difficulty')) continue;
+      n += paintProblemRow(row, isLight);
+    }
+
+    // 其他位置的裸题号链接（评测记录、讨论、专栏等）：
+    // 没有同行难度可参考，统一染成主题强调色，跟普通链接区分开。
+    const accent = currentAccent().hex;
+    for (const a of document.querySelectorAll('a[href*="/problem/"]')) {
+      if (a.closest('.list-wrap')) continue;          // 题库行已处理
+      if (a.getAttribute('data-flins-pc')) continue;
+      const text = (a.textContent || '').trim();
+      // 只染「看起来是题号」的链接：P1234 / B2001 / AT_xxx 这类
+      if (!/^[A-Z]{1,2}\d+|^AT_|^CF\d|^SP\d|^UVA|^U\d+$/i.test(text)) continue;
+      if (a.children.length) continue;
+      try {
+        a.style.setProperty('color', accent, 'important');
+        a.style.setProperty('-webkit-text-fill-color', accent, 'important');
+        a.setAttribute('data-flins-pc', '1');
+        n += 1;
+      } catch (e) { /* 忽略 */ }
+    }
+    return n;
+  }
+
+  /** 关掉开关时把染色撤掉，颜色还给主题 */
+  function clearProblemColors() {
+    for (const el of document.querySelectorAll('[data-flins-pc]')) {
+      try {
+        el.style.removeProperty('color');
+        el.style.removeProperty('-webkit-text-fill-color');
+        el.removeAttribute('data-flins-pc');
+      } catch (e) { /* 忽略 */ }
+    }
+  }
+
+  
   function patchProblemActions() {
     const bar = document.querySelector('.problem-block-actions');
     if (!bar) return 0;
@@ -445,6 +573,8 @@
     try { out.actions = patchProblemActions(); } catch (e) { errs.push('actions: ' + (e && e.message)); }
     
     try { syncNavBounds(); } catch (e) { errs.push('navbounds: ' + (e && e.message)); }
+    // 题号难度色：和「白块自愈 / 深色模式」无关，两形态都要跑
+    try { out.problemColors = paintProblemColors(); } catch (e) { errs.push('problemColors: ' + (e && e.message)); }
     return out;
   }
 
@@ -453,6 +583,8 @@
   
   
   function schedulePatch() {
+    // 题号难度色独立于「白块自愈」与形态判断，先跑一遍
+    try { paintProblemColors(); } catch (e) { /* 忽略 */ }
     if (!cfg.autoPatch) return;
     if (resolveMode() !== 'dark') return;
     const now = Date.now();
@@ -483,6 +615,9 @@
     root.classList.toggle('flins-glass-off', !glassEffective());
     root.classList.toggle('flins-ornaments-off', !cfg.ornaments);
     root.classList.toggle('flins-motion-off', !cfg.motion);
+    root.classList.toggle('flins-problem-colors-off', !cfg.problemColors);
+    // 开关切换时同步行内样式：关掉就撤销我们加的 !important，让主题色接管
+    try { if (cfg.problemColors) paintProblemColors(); else clearProblemColors(); } catch (e) { /* 忽略 */ }
     
     for (const s of ['lamp', 'moon', 'none']) {
       root.classList.toggle('flins-orn-' + s, cfg.ornamentStyle === s);
@@ -931,10 +1066,15 @@
       toggle('装饰元素（徽记 / 极光 / 铭牌）', cfg.ornaments, (v) => { cfg.ornaments = v; commit(); }),
       toggle('动效（灯火呼吸 / 选中脉动）', cfg.motion, (v) => { cfg.motion = v; commit(); }),
       toggle('自动修补遗漏的白块', cfg.autoPatch, (v) => { cfg.autoPatch = v; commit(); if (v) schedulePatch(); }),
+      toggle('题号难度色（兼容上色插件）', cfg.problemColors, (v) => { cfg.problemColors = v; commit(); }),
     ];
     if (luoguBlurDisabled() && cfg.glass) {
       extra.push(el('p', { class: 'flins-note', text: '洛谷已因性能原因关闭毛玻璃，本主题一并跟随。' }));
     }
+    extra.push(el('p', {
+      class: 'flins-note',
+      text: '关掉「题号难度色」后，主题不再放行行内上色，题库里的题号会统一成本主题的正文色。',
+    }));
     panelEl.appendChild(el('div', { class: 'flins-sec' }, [
       el('div', { class: 'flins-lab' }, [el('span', { text: '效果' })]),
     ].concat(extra)));
