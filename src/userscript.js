@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      1.4.0
+// @version      1.4.1
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -72,17 +72,34 @@
     lampImage: '',           
   };
 
+  /** 把外部来的对象合并进默认配置。
+   *  ⚠️ 一定要逐项校验类型：存储里的旧版本数据、或者用户手改坏的 JSON，
+   *  直接 Object.assign 会让 cfg 带着错误类型进 apply()（比如 bgBlur 变成字符串），
+   *  轻则样式算不出来，重则整段 apply 抛错、主题整个不生效。 */
+  function mergeCfg(base, obj) {
+    const out = Object.assign({}, base);
+    if (!obj || typeof obj !== 'object') return out;
+    for (const k of Object.keys(base)) {
+      if (!(k in obj)) continue;
+      const a = base[k], b = obj[k];
+      if (b === null || typeof b !== typeof a) continue;
+      if (Array.isArray(a) !== Array.isArray(b)) continue;
+      out[k] = b;
+    }
+    return out;
+  }
+
   const store = {
     read() {
       try {
         if (typeof GM_getValue === 'function') {
           const raw = GM_getValue(STORE_KEY, null);
-          if (raw) return Object.assign({}, DEFAULTS, typeof raw === 'string' ? JSON.parse(raw) : raw);
+          if (raw) return mergeCfg(DEFAULTS, typeof raw === 'string' ? JSON.parse(raw) : raw);
         }
       } catch (e) {   }
       try {
         const raw = localStorage.getItem(STORE_KEY);
-        if (raw) return Object.assign({}, DEFAULTS, JSON.parse(raw));
+        if (raw) return mergeCfg(DEFAULTS, JSON.parse(raw));
       } catch (e) {   }
       return Object.assign({}, DEFAULTS);
     },
@@ -1113,22 +1130,19 @@
       : (data && typeof data === 'object' ? data : null);
     if (!obj) { say('导入失败：文件里没有配置对象。'); return; }
 
-    const next = Object.assign({}, DEFAULTS);
+    const next = mergeCfg(DEFAULTS, obj);
     let n = 0;
     for (const k of Object.keys(DEFAULTS)) {
       if (!(k in obj)) continue;
-      const a = DEFAULTS[k], b = obj[k];
-      const sameType = b !== null && typeof b === typeof a;
-      const arrayOk = Array.isArray(a) ? Array.isArray(b) : true;
-      if (!sameType || !arrayOk) continue;
-      next[k] = b;
+      const b = obj[k];
+      if (b === null || typeof b !== typeof DEFAULTS[k]) continue;
+      if (Array.isArray(DEFAULTS[k]) !== Array.isArray(b)) continue;
       n += 1;
     }
     if (!n) { say('导入失败：没有可识别的配置项。'); return; }
 
     cfg = next;
     commit();
-    rebuildPanel();
     const r = report();
     if (r) r.textContent = '已导入 ' + n + ' 项配置' + (name ? '（' + name + '）' : '') + '。';
   }

@@ -2759,7 +2759,151 @@ html.flins-layout-flins .actions.left-mode {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   19. 帮助中心 help.luogu.com.cn（Docusaurus）
+   19. 老外壳页面（错误页、部分独立页）
+
+   洛谷还留着几套老外壳。错误页（如 /rank/list 这种不存在的地址）走的就是
+   最老的那一套：.lfe-body 左侧竖栏 + .header + main，完全没有 .theme-page /
+   .l-card 这些新外壳类名，主题的选择器一个都命中不到，结果是：
+
+     · 右上角 .user-nav 是 rgba(255,255,255,.5) 半透明白班
+     · main 里正文是 rgba(0,0,0,.75) 深字压在深底上
+     · 左侧 .lfe-body 竖栏是一整块死灰色
+
+   这一节把这些兜住，颜色一律走主题变量，深浅两形态都生效。
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* 19.1 右上角用户区：半透明白 → 主题表面色 -------------------------- */
+html.flins-layout-flins .user-nav {
+  background: transparent !important;
+  color: var(--flins-text) !important;
+}
+html.flins-layout-flins .user-nav > nav,
+html.flins-layout-flins .user-nav .search-wrap,
+html.flins-layout-flins .user-nav .search-wrap input {
+  background: transparent !important;
+  color: var(--flins-text) !important;
+}
+html.flins-layout-flins .user-nav input {
+  background: rgba(16, 23, 58, 0.75) !important;
+  border: 1px solid var(--flins-border) !important;
+  color: var(--flins-text) !important;
+  border-radius: 10px !important;
+}
+html.flins-layout-flins .user-nav input::placeholder {
+  color: var(--flins-text-dim) !important;
+}
+html.flins-layout-flins .user-nav a,
+html.flins-layout-flins .user-nav .icon {
+  color: var(--flins-text-muted) !important;
+}
+html.flins-layout-flins .user-nav a:hover,
+html.flins-layout-flins .user-nav .icon:hover {
+  color: var(--flins-accent-soft) !important;
+}
+
+/* 19.2 老外壳正文：深字 → 主题正文色 -------------------------------- */
+html.flins-layout-flins main,
+html.flins-layout-flins main > *,
+html.flins-layout-flins main p,
+html.flins-layout-flins main div:not([class*="lcolor"]):not([class*="lg-fg"]) {
+  color: var(--flins-text);
+}
+html.flins-layout-flins .header,
+html.flins-layout-flins .header * {
+  color: var(--flins-heading) !important;
+}
+/* header 本身也是背景图上的浮层，不要给它铺底色 */
+html.flins-layout-flins .header,
+html.flins-layout-flins .wrapper,
+html.flins-layout-flins .wrapper.wrapped {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+html.flins-layout-flins .header h1,
+html.flins-layout-flins .header h2,
+html.flins-layout-flins .header h3 {
+  color: var(--flins-heading) !important;
+}
+html.flins-layout-flins .wrapper.wrapped,
+html.flins-layout-flins .main-container {
+  background: transparent !important;
+}
+/* ⚠️ main 不能给不透明底色：老外壳页面的背景图是 html::before 那层画的，
+   写一个 0.92 的深色会把整张插画盖成一块死灰（错误页踩过）。 */
+html.flins-layout-flins main {
+  background: transparent !important;
+}
+html.flins-layout-flins .footer,
+html.flins-layout-flins .footer .info {
+  background: transparent !important;
+  color: var(--flins-text-dim) !important;
+}
+html.flins-layout-flins .footer a {
+  color: var(--flins-text-muted) !important;
+}
+/* 页脚那块灰来自 div.background（写死 rgb(51,51,51)），盖在背景图上 */
+html.flins-layout-flins .footer .background,
+html.flins-layout-flins .background {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* 19.3 左侧竖栏：死灰 → 玻璃竖条 ------------------------------------ */
+html.flins-layout-flins .lfe-body {
+  background: rgba(9, 14, 38, 0.55) !important;
+  border-right: 1px solid var(--flins-border) !important;
+  -webkit-backdrop-filter: var(--flins-glass-blur);
+  backdrop-filter: var(--flins-glass-blur);
+}
+/* 个人主页「更改封面」的浮层：洛谷给它写死 background:#fff，
+   一旦展开就是 1450×285 的一大块白，深色下非常刺眼。 */
+html.flins-layout-flins .cover-upload {
+  background: rgba(11, 16, 39, 0.94) !important;
+  border: 1px solid var(--flins-border) !important;
+  border-radius: 14px !important;
+  color: var(--flins-text) !important;
+  -webkit-backdrop-filter: var(--flins-glass-blur);
+  backdrop-filter: var(--flins-glass-blur);
+}
+html.flins-layout-flins .cover-upload * {
+  color: var(--flins-text) !important;
+}
+html.flins-layout-flins .cover-upload input {
+  background: rgba(16, 23, 58, 0.9) !important;
+  border: 1px solid var(--flins-border) !important;
+  color: var(--flins-text) !important;
+  border-radius: 10px !important;
+}
+html.flins-light.flins-layout-flins .cover-upload {
+  background: rgba(252, 253, 255, 0.97) !important;
+}
+html.flins-light.flins-layout-flins .cover-upload * {
+  color: var(--flins-text) !important;
+}
+html.flins-layout-flins .lfe-body a,
+html.flins-layout-flins .lfe-body .title,
+html.flins-layout-flins .lfe-body .label {
+  color: var(--flins-text-muted) !important;
+}
+html.flins-layout-flins .lfe-body a:hover {
+  color: var(--flins-accent-soft) !important;
+  background: rgba(var(--flins-accent-rgb), 0.1) !important;
+}
+html.flins-layout-flins .lfe-body .icon {
+  filter: none !important;
+  opacity: 0.85 !important;
+}
+
+/* 19.4 浅色形态 ------------------------------------------------------ */
+html.flins-light.flins-layout-flins .lfe-body {
+  background: rgba(255, 255, 255, 0.94) !important;
+}
+html.flins-light.flins-layout-flins .user-nav input {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   20. 帮助中心 help.luogu.com.cn（Docusaurus）
 
    这个子站不是洛谷外壳，而是 Docusaurus 生成的文档站：
      · 顶栏 nav.navbar 是纯白 rgb(255,255,255)
@@ -2773,7 +2917,7 @@ html.flins-layout-flins .actions.left-mode {
    这样深浅两形态与强调色切换都能跟着走。
    ────────────────────────────────────────────────────────────────────────── */
 
-/* 19.1 顶栏 / 侧栏 / 页脚 --------------------------------------------- */
+/* 20.1 顶栏 / 侧栏 / 页脚 --------------------------------------------- */
 html.flins-layout-flins .navbar,
 html.flins-layout-flins header.navbar {
   background: rgba(11, 16, 39, 0.92) !important;
@@ -2815,7 +2959,7 @@ html.flins-layout-flins footer.footer {
 }
 html.flins-layout-flins footer.footer a { color: var(--flins-text-muted) !important; }
 
-/* 19.2 正文 ---------------------------------------------------------- */
+/* 20.2 正文 ---------------------------------------------------------- */
 html.flins-layout-flins .theme-doc-markdown,
 html.flins-layout-flins .markdown {
   color: var(--flins-text) !important;
@@ -2855,7 +2999,7 @@ html.flins-layout-flins .table-of-contents__link:hover {
   color: var(--flins-accent-soft) !important;
 }
 
-/* 19.3 行内代码 / 代码块 ---------------------------------------------
+/* 20.3 行内代码 / 代码块 ---------------------------------------------
    ⚠️ 只改容器底色，不碰 .token 的颜色 —— Prism 的语法配色要留着，
       否则代码又会变成一整片单色（主站的提交区踩过这个坑）。 */
 html.flins-layout-flins .theme-doc-markdown code,
@@ -2897,7 +3041,7 @@ html.flins-layout-flins .clean-btn {
   border-radius: 8px !important;
 }
 
-/* 19.4 表格 / 提示块 / 图片 ------------------------------------------ */
+/* 20.4 表格 / 提示块 / 图片 ------------------------------------------ */
 html.flins-layout-flins .theme-doc-markdown table,
 html.flins-layout-flins .markdown table {
   border-color: var(--flins-border) !important;
@@ -2928,7 +3072,7 @@ html.flins-layout-flins .markdown img {
   box-shadow: 0 18px 40px -30px rgba(0, 0, 0, 0.9);
 }
 
-/* 19.5 搜索框 / 快捷键提示 ------------------------------------------- */
+/* 20.5 搜索框 / 快捷键提示 ------------------------------------------- */
 html.flins-layout-flins .navbar [class*="searchBar"],
 html.flins-layout-flins .navbar input,
 html.flins-layout-flins kbd {
@@ -2942,7 +3086,7 @@ html.flins-layout-flins kbd {
   font-size: 11px !important;
 }
 
-/* 19.6 分页导航 ------------------------------------------------------ */
+/* 20.6 分页导航 ------------------------------------------------------ */
 html.flins-layout-flins .pagination-nav__link {
   background: rgba(16, 23, 58, 0.6) !important;
   border: 1px solid var(--flins-border) !important;
@@ -2953,7 +3097,7 @@ html.flins-layout-flins .pagination-nav__label {
   color: var(--flins-heading) !important;
 }
 
-/* 19.7 浅色形态 ------------------------------------------------------ */
+/* 20.7 浅色形态 ------------------------------------------------------ */
 html.flins-light.flins-layout-flins .navbar,
 html.flins-light.flins-layout-flins header.navbar {
   background: rgba(255, 255, 255, 0.9) !important;
@@ -2969,6 +3113,31 @@ html.flins-light.flins-layout-flins .markdown code {
   background: rgba(52, 84, 148, 0.09) !important;
   border-color: rgba(52, 84, 148, 0.18) !important;
   color: #1B4A8C !important;
+}
+/* ⚠️ 右侧目录在浅色形态下必须单独给色：
+   原先只有 --flins-text-muted（深色形态的浅灰），浅色背景下等于白字白底，
+   「前言 / 图文说明 / 基本规范」这些链接整列看不见。 */
+html.flins-light.flins-layout-flins .theme-doc-toc-desktop,
+html.flins-light.flins-layout-flins .table-of-contents,
+html.flins-light.flins-layout-flins .table-of-contents__link,
+html.flins-light.flins-layout-flins .table-of-contents li {
+  color: #5A6785 !important;
+}
+html.flins-light.flins-layout-flins .table-of-contents__link--active,
+html.flins-light.flins-layout-flins .table-of-contents__link:hover {
+  color: #1B4A8C !important;
+}
+html.flins-light.flins-layout-flins .theme-doc-sidebar-container,
+html.flins-light.flins-layout-flins .menu__link {
+  color: #4A5677 !important;
+}
+html.flins-light.flins-layout-flins .navbar__link,
+html.flins-light.flins-layout-flins .navbar__title {
+  color: #16203C !important;
+}
+html.flins-light.flins-layout-flins .theme-doc-markdown,
+html.flins-light.flins-layout-flins .markdown {
+  color: #16203C !important;
 }
 
 @media print {
