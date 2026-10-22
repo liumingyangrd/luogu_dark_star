@@ -1073,8 +1073,16 @@ a.tag,
 .user-header-bottom .info-text { color: var(--flins-text-muted) !important; }
 
  
-html:not(.flins-light) .luogu-username.user-name {
-  color: var(--flins-text) !important;
+/* ⚠️⚠️ 这里【不要】用 !important 强刷 .user-name 的颜色。
+   曾经写过 `html:not(.flins-light) .luogu-username.user-name { color: var(--flins-text) !important }`
+   是为了修「黑名」（洛谷把部分用户名写死 #404040，深色底上看不见）。
+   但这条会把【所有】不带语义类的用户名统一刷成正文色 ——
+   等于把按用户组上色的名字全抹平了，用户反馈「所有人全变成灰名」。
+   现在改为：默认不干预，让洛谷自己的组色生效；
+   真正的「黑名」交给运行时的对比度自愈（patchLowContrast）逐个提亮，
+   这样彩色名字不受影响，只有看不清的才被修。 */
+html:not(.flins-light) .luogu-username.user-name:not([style*="color"]) {
+  color: inherit;
 }
 
  
@@ -2776,15 +2784,14 @@ html.flins-layout-flins .list-wrap .row-wrap > .row::after {
   pointer-events: none;
 }
 /* ⚠️ 不能无条件刷题号/标题颜色：
-   第三方插件（如 luogu_bot1）会把「题目难度色」写成行内 style.color，
-   而这里的 !important 会压过行内样式，导致插件颜色全部失效（用户反馈过）。
-   所以排除「自带行内 color」的元素，把上色权交回行内样式。
-   ⚠️⚠️ 光排除还不够：洛谷在标题链接上用了 -webkit-text-fill-color，
-   它的优先级高于 color，行内 color 会被它盖住（实测行内写了红色，实际仍是白色）。
-   所以对带行内色的链接，把 fill 也设成 inherit，让 color 真正生效。
+/* ⚠️ 放行第三方上色插件写的行内颜色（如 luogu_bot1 的题号难度色）。
+   主题原本会给题库行里的题号 / 题名强制刷成正文色，!important 一压，
+   插件写在行内 style.color 里的颜色就全失效了 —— 用户反馈过。
+   所以这里只给「没有行内 color」的元素上色，有行内色的原样放行。
 
-   这一整套「放行行内色」的行为由面板开关「题号难度色」控制：
-   关掉后 html 会带 .flins-problem-colors-off，下面几条规则把颜色收回来。 */
+   ⚠️⚠️ 洛谷给这些链接还写了 -webkit-text-fill-color，优先级高于 color，
+   光放行 color 不够（实测行内写红色，实际显示仍是白色），
+   所以对带行内色的元素把 fill 也设成 inherit。 */
 html.flins-layout-flins .list-wrap .row-wrap > .row .pid:not([style*="color"]),
 html.flins-layout-flins .list-wrap .row-wrap > .row .title a:not([style*="color"]) {
   color: var(--flins-heading) !important;
@@ -2797,27 +2804,12 @@ html.flins-layout-flins .list-wrap .row-wrap > .row .pid[style*="color"],
 html.flins-layout-flins .list-wrap .row-wrap > .row .title a[style*="color"] {
   -webkit-text-fill-color: inherit !important;
 }
-/* ⚠️⚠️ :visited 是这里真正的元凶。
-   洛谷给已访问过的题号链接写了 :visited 颜色，而浏览器的隐私限制让
-   「行内 color」在 :visited 状态下取不到自身值，实测：
-     行内写 rgb(254,76,97) → computed 变成 rgb(158,158,255)（洛谷的 visited 色）。
-   解法：用属性选择器把 :visited 也一起按住，直接把 fill 设成 currentColor，
-   让行内 color 说了算；再把 :visited 的 color 显式写成 inherit，回到行内值。 */
-html.flins-layout-flins .list-wrap .row-wrap > .row .title a[style*="color"],
-html.flins-layout-flins .list-wrap .row-wrap > .row .title a[style*="color"]:visited,
-html.flins-layout-flins .list-wrap .row-wrap > .row .title a[style*="color"]:link,
-html.flins-layout-flins .list-wrap .row-wrap > .row .pid[style*="color"],
-html.flins-layout-flins .list-wrap .row-wrap > .row .pid[style*="color"]:visited,
-html.flins-layout-flins .list-wrap .row-wrap > .row .pid[style*="color"]:link {
-  -webkit-text-fill-color: currentcolor !important;
-}
-/* 关掉「题号难度色」：行内色一律不再放行，统一回主题色 */
+/* 兼容开关关掉时：行内色不再放行，题号统一回主题色 */
 html.flins-problem-colors-off .list-wrap .row-wrap > .row .pid,
 html.flins-problem-colors-off .list-wrap .row-wrap > .row .title a {
   color: var(--flins-heading) !important;
   -webkit-text-fill-color: currentcolor !important;
 }
-html.flins-layout-flins .list-wrap .row-wrap > .row .title a:not([style*="color"]):hover {
   color: var(--flins-accent-soft) !important;
 }
 html.flins-layout-flins .list-wrap .row-wrap > .row .difficulty {
@@ -3178,12 +3170,32 @@ html.flins-light.flins-layout-flins pre:not([class*="language-"]) {
   color: #16203C !important;
 }
 
-/* 19.3 左侧竖栏：死灰 → 玻璃竖条 ------------------------------------ */
-html.flins-layout-flins .lfe-body {
+/* 19.3 左侧竖栏：死灰 → 玻璃竖条 ------------------------------------
+   ⚠️⚠️ 这里【绝对不能】给 .lfe-body 加 backdrop-filter！
+   .lfe-body 是整个页面的外层容器，而 backdrop-filter 会让元素「创建包含块」，
+   于是它里面所有 position:fixed 的子孙（顶栏 .top-bar、导航 nav.sidebar、
+   设置面板 .flins-panel）都会退化成分页内定位 ——
+   实测滚动 1200px 后顶栏 y 从 70 变成 -1130，整条跟着页面滚走。
+   玻璃效果只给真正的左侧竖栏形态（flins-nav-side）用，
+   并且只作用在窄条那部分，不碰容器。 */
+html.flins-layout-flins.flins-nav-side .lfe-body > nav.sidebar {
   background: rgba(9, 14, 38, 0.55) !important;
   border-right: 1px solid var(--flins-border) !important;
   -webkit-backdrop-filter: var(--flins-glass-blur);
   backdrop-filter: var(--flins-glass-blur);
+}
+/* 老外壳错误页没有 nav.sidebar，竖栏就是 .lfe-body 本身；
+   那个页面没有任何 fixed 子孙，加玻璃是安全的。 */
+html.flins-layout-flins .lfe-body:not(:has(.top-bar)) {
+  background: rgba(9, 14, 38, 0.55) !important;
+  border-right: 1px solid var(--flins-border) !important;
+  -webkit-backdrop-filter: var(--flins-glass-blur);
+  backdrop-filter: var(--flins-glass-blur);
+}
+/* 兜底：任何情况下 .lfe-body 都不许带 backdrop-filter（避免 future 误伤） */
+html.flins-layout-flins .lfe-body:has(.top-bar) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 /* 个人主页「更改封面」的浮层：洛谷给它写死 background:#fff，
    一旦展开就是 1450×285 的一大块白，深色下非常刺眼。 */
@@ -3475,3 +3487,57 @@ html.flins-light.flins-layout-flins .markdown {
   html, body { background: #fff !important; color: #000 !important; }
   .theme-page .l-card { box-shadow: none !important; border-color: #ccc !important; }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   21. 语义色收口（必须放在文件最后）
+
+   洛谷的用户组名色用的是 .lg-fg-* 这类「语义类」：
+     .lg-fg-red / .lg-fg-orange / .lg-fg-purple / .lg-fg-bluelight …
+   主题在前面第 5 节已经按深色形态重定义过一遍，但那批规则的位置比较靠前，
+   后面大量的组件级规则（.lg-index-content / .lg-article / 列表行 …
+   也都是 !important）会把它们压住 —— 表现就是
+   **所有用户名统一变成灰白**，用户组色全丢（用户反馈「所有人全变成灰名」）。
+
+   这里把同一批颜色在【文件最末尾】再声明一次：
+   特异性相同、都带 !important 时，后出现者胜出，于是语义色稳定生效。
+   改配色时请【两处一起改】，不要只改前面那处。
+   ────────────────────────────────────────────────────────────────────────── */
+html:not(.flins-light) .lg-fg-brown     { color: #d9a441 !important; }
+html:not(.flins-light) .lg-fg-gray      { color: #9aa6c4 !important; }
+html:not(.flins-light) .lg-fg-red       { color: #ff7b6b !important; }
+html:not(.flins-light) .lg-fg-yellow    { color: #ffd93d !important; }
+html:not(.flins-light) .lg-fg-orange    { color: #ffa552 !important; }
+html:not(.flins-light) .lg-fg-purple    { color: #c07fe0 !important; }
+html:not(.flins-light) .lg-fg-green     { color: #6fd46f !important; }
+html:not(.flins-light) .lg-fg-greendark { color: #7fe08a !important; }
+html:not(.flins-light) .lg-fg-bluedark  { color: #a8bcdd !important; }
+html:not(.flins-light) .lg-fg-bluelight { color: #5ab6e8 !important; }
+/* 语义色元素里的 <span> 也要继承这些颜色，别被正文色刷掉 */
+html:not(.flins-light) [class*="lg-fg-"] :is(span, b, strong, a) {
+  color: inherit !important;
+}
+html:not(.flins-light) [class*="lg-fg-"] {
+  -webkit-text-fill-color: currentcolor !important;
+}
+/* 上一块特异性 (0,3,1) 仍会被组件级规则（如 .lg-index-content .lg-article a）压住，
+   这里再加一级：带上 body 与元素名，特异性升到 (0,4,2)，稳稳压过组件规则。 */
+html:not(.flins-light) body a.lg-fg-brown     { color: #d9a441 !important; }
+html:not(.flins-light) body a.lg-fg-gray      { color: #9aa6c4 !important; }
+html:not(.flins-light) body a.lg-fg-red       { color: #ff7b6b !important; }
+html:not(.flins-light) body a.lg-fg-yellow    { color: #ffd93d !important; }
+html:not(.flins-light) body a.lg-fg-orange    { color: #ffa552 !important; }
+html:not(.flins-light) body a.lg-fg-purple    { color: #c07fe0 !important; }
+html:not(.flins-light) body a.lg-fg-green     { color: #6fd46f !important; }
+html:not(.flins-light) body a.lg-fg-greendark { color: #7fe08a !important; }
+html:not(.flins-light) body a.lg-fg-bluedark  { color: #a8bcdd !important; }
+html:not(.flins-light) body a.lg-fg-bluelight { color: #5ab6e8 !important; }
+html:not(.flins-light) body span.lg-fg-brown     { color: #d9a441 !important; }
+html:not(.flins-light) body span.lg-fg-gray      { color: #9aa6c4 !important; }
+html:not(.flins-light) body span.lg-fg-red       { color: #ff7b6b !important; }
+html:not(.flins-light) body span.lg-fg-yellow    { color: #ffd93d !important; }
+html:not(.flins-light) body span.lg-fg-orange    { color: #ffa552 !important; }
+html:not(.flins-light) body span.lg-fg-purple    { color: #c07fe0 !important; }
+html:not(.flins-light) body span.lg-fg-green     { color: #6fd46f !important; }
+html:not(.flins-light) body span.lg-fg-greendark { color: #7fe08a !important; }
+html:not(.flins-light) body span.lg-fg-bluedark  { color: #a8bcdd !important; }
+html:not(.flins-light) body span.lg-fg-bluelight { color: #5ab6e8 !important; }
