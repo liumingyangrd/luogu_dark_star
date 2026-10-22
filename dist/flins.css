@@ -3541,3 +3541,31 @@ html:not(.flins-light) body span.lg-fg-green     { color: #6fd46f !important; }
 html:not(.flins-light) body span.lg-fg-greendark { color: #7fe08a !important; }
 html:not(.flins-light) body span.lg-fg-bluedark  { color: #a8bcdd !important; }
 html:not(.flins-light) body span.lg-fg-bluelight { color: #5ab6e8 !important; }
+/* ──────────────────────────────────────────────────────────────────────────
+   22. 图表里的 SVG 文字（主页做题热度等）
+
+   ⚠️ SVG 的 <text>/<tspan> 上色用的是 fill 属性，不是 CSS 的 color。
+   主题之前只统一了 color，于是图表里的坐标轴刻度和轴名一直是洛谷写死的
+   黑色 (fill:#000 / #333 / #666)，压在深色卡片上几乎看不见
+   （用户反馈「主页做题热度图字都是黑的」）。
+   这里按 fill 单独覆盖，并保持 hover 时的 tooltip 不受影响。
+   ────────────────────────────────────────────────────────────────────────── */
+html.flins-layout-flins svg text,
+html.flins-layout-flins svg tspan {
+  fill: var(--flins-text-muted) !important;
+}
+/* 轴名（「累积通过」「新通过」）比刻度稍亮一点，层次更清楚 */
+html.flins-layout-flins svg text[transform],
+html.flins-layout-flins svg tspan:only-child {
+  fill: var(--flins-text-dim) !important;
+}
+/* 图表上的网格线 / 轴线也压暗，避免亮灰线割裂深色卡片 */
+html.flins-layout-flins svg line,
+html.flins-layout-flins svg path[stroke="#ccc"],
+html.flins-layout-flins svg path[stroke="#CCCCCC"] {
+  stroke: rgba(130, 156, 216, 0.28) !important;
+}
+html.flins-light.flins-layout-flins svg text,
+html.flins-light.flins-layout-flins svg tspan {
+  fill: #5A6785 !important;
+}
