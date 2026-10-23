@@ -3295,3 +3295,35 @@ html.flins-light.flins-layout-flins svg text,
 html.flins-light.flins-layout-flins svg tspan {
   fill: #5A6785 !important;
 }
+/* ──────────────────────────────────────────────────────────────────────────
+   23. 列表行里被洛谷写死的深色文字（文章广场等）
+
+   洛谷给列表行的标题 / 摘要写的是深色（#262626 一类），在深色卡片上几乎看不见。
+   用户脚本里有一层「运行时对比度自愈」会把这些字逐个提亮，
+   所以装了脚本的页面看起来是白的 —— 但**纯 CSS（Stylus）安装没有脚本**，
+   这些字就一直是黑的。
+   这里直接按结构写死一遍，保证纯 CSS 安装也不会出现黑字。
+   （脚本自愈仍然保留，负责兜住这里没覆盖到的其它组件。）
+   ────────────────────────────────────────────────────────────────────────── */
+html.flins-layout-flins .row a[href*="/article/"]:not([style*="color"]),
+html.flins-layout-flins .row .title a:not([style*="color"]) {
+  color: var(--flins-heading) !important;
+  -webkit-text-fill-color: currentcolor !important;
+}
+html.flins-layout-flins .row .content,
+html.flins-layout-flins .row .content * {
+  color: var(--flins-text-muted) !important;
+  -webkit-text-fill-color: currentcolor !important;
+}
+html.flins-layout-flins .row .content a {
+  color: var(--lcolor--link, #7EE8F4) !important;
+}
+html.flins-layout-flins .row .time,
+html.flins-layout-flins .row .info,
+html.flins-layout-flins .row .lfe-caption {
+  color: var(--flins-text-dim) !important;
+}
+html.flins-light.flins-layout-flins .row .content,
+html.flins-light.flins-layout-flins .row .content * {
+  color: #4A5677 !important;
+}
