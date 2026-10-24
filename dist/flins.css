@@ -3611,3 +3611,39 @@ html.flins-dark .row .content * { -webkit-text-fill-color: currentcolor !importa
 html.flins-light .row a[href*="/article/"] { -webkit-text-fill-color: currentcolor !important; }
 html.flins-light .row .content,
 html.flins-light .row .content * { -webkit-text-fill-color: currentcolor !important; }
+/* ──────────────────────────────────────────────────────────────────────────
+   24. 下拉菜单项（提交页语言选择等）
+
+   div.dropdown > ul > li 的文字被洛谷写成 #333，而 dropdown 自己是深色底，
+   于是菜单项几乎看不见（用户截图：语言列表全是暗字）。
+   这里把菜单项、悬停、选中态统一成主题色。
+   ────────────────────────────────────────────────────────────────────────── */
+html.flins-dark .dropdown ul,
+html.flins-dark .dropdown li,
+html.flins-dark .dropdown .l-options,
+html.flins-dark .dropdown a {
+  color: var(--flins-text) !important;
+  -webkit-text-fill-color: currentcolor !important;
+}
+html.flins-dark .dropdown li {
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  cursor: pointer;
+}
+html.flins-dark .dropdown li:hover,
+html.flins-dark .dropdown li.active,
+html.flins-dark .dropdown li.selected {
+  background: rgba(var(--flins-accent-rgb), 0.16) !important;
+  color: var(--flins-accent-soft) !important;
+  -webkit-text-fill-color: currentcolor !important;
+}
+html.flins-light .dropdown li,
+html.flins-light .dropdown ul {
+  color: #243354 !important;
+  -webkit-text-fill-color: currentcolor !important;
+}
+html.flins-light .dropdown li:hover,
+html.flins-light .dropdown li.active {
+  background: rgba(52, 84, 148, 0.12) !important;
+  color: #1B4A8C !important;
+}

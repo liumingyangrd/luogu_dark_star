@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      1.7.0
+// @version      1.7.1
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -1294,7 +1294,7 @@
     'box-shadow:0 16px 34px -18px rgba(0,0,0,.9);opacity:0;transform:translateY(6px);',
     'transition:opacity .16s ease,transform .16s ease;pointer-events:none;white-space:pre-wrap}',
     '.flins-pet-bubble[data-show="1"]{opacity:1;transform:translateY(0)}',
-    '.flins-pet-bubble::after{content:"";position:absolute;left:18px;bottom:-6px;width:10px;height:10px;',
+    '.flins-pet-bubble::after{content:"";position:absolute;left:var(--flins-arrow-x,18px);bottom:-6px;width:10px;height:10px;',
     'background:rgba(11,16,39,.95);border-right:1px solid rgba(126,232,244,.5);',
     'border-bottom:1px solid rgba(126,232,244,.5);transform:rotate(45deg)}',
 
@@ -1435,10 +1435,21 @@
   function petSay(text, ms) {
     if (!petBubble || !petEl) return;
     petBubble.textContent = text;
-    const r = petEl.getBoundingClientRect();
-    petBubble.style.left = Math.max(8, r.left - 40) + 'px';
-    petBubble.style.top = Math.max(8, r.top - 44) + 'px';
+    petBubble.style.left = '-9999px';
+    petBubble.style.top = '-9999px';
     petBubble.setAttribute('data-show', '1');
+    const r = petEl.getBoundingClientRect();
+    const bw = petBubble.offsetWidth || 160;
+    const bh = petBubble.offsetHeight || 36;
+    const cx = r.left + r.width / 2;
+    let left = Math.round(cx - bw / 2);
+    left = Math.max(8, Math.min(left, window.innerWidth - bw - 8));
+    let top = Math.round(r.top - bh - 12);
+    if (top < 8) top = Math.round(r.top + r.height + 12);
+    petBubble.style.left = left + 'px';
+    petBubble.style.top = top + 'px';
+    const arrowX = Math.max(10, Math.min(bw - 24, Math.round(cx - left - 5)));
+    petBubble.style.setProperty('--flins-arrow-x', arrowX + 'px');
     clearTimeout(petSayTimer);
     petSayTimer = setTimeout(() => {
       if (petBubble) petBubble.removeAttribute('data-show');
