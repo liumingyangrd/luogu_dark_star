@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      1.9.4
+// @version      2.0.0
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -1341,7 +1341,13 @@
     'html.flins-light .flins-pet-bubble::after{background:rgba(255,255,255,.98);border-color:rgba(52,84,148,.28)}',
     'html.flins-light .flins-pet-menu{background:rgba(255,255,255,.99);border-color:rgba(52,84,148,.24)}',
     'html.flins-light .flins-pet-menu button{color:#243354}',
-    'html.flins-light .flins-pet-menu button:hover{background:rgba(52,84,148,.12);color:#1B4A8C}',    '.flins-pet-face{position:fixed;width:46px;height:46px;border-radius:50%;z-index:2147483000;pointer-events:none;opacity:0;transform:scale(.55) translateY(6px);transition:opacity .18s ease,transform .18s cubic-bezier(.2,1.5,.4,1);box-shadow:0 10px 22px -10px rgba(0,0,0,.85);border:1px solid rgba(126,232,244,.55);overflow:hidden}',
+    'html.flins-light .flins-pet-menu button:hover{background:rgba(52,84,148,.12);color:#1B4A8C}',
+    '.flins-pet-chat{position:fixed;z-index:2147483000;width:262px;padding:9px;border-radius:12px;background:rgba(13,19,44,.97);border:1px solid rgba(130,156,216,.4);box-shadow:0 22px 48px -24px rgba(0,0,0,.95)}',
+    '.flins-pet-chat-tip{font:500 11.5px/1.4 var(--flins-font-body,system-ui);color:rgba(150,162,196,.95);margin-bottom:6px}',
+    '.flins-pet-chat input{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid rgba(130,156,216,.3);border-radius:8px;background:rgba(255,255,255,.06);color:#E6EBFB;font:500 12.5px/1.4 var(--flins-font-body,system-ui);outline:none}',
+    '.flins-pet-chat input:focus{border-color:rgba(126,232,244,.7)}',
+    'html.flins-light .flins-pet-chat{background:#fff;border-color:#ccd8ee}',
+    'html.flins-light .flins-pet-chat input{background:#fff;color:#21252f;border-color:#ccd8ee}',    '.flins-pet-face{position:fixed;width:46px;height:46px;border-radius:50%;z-index:2147483000;pointer-events:none;opacity:0;transform:scale(.55) translateY(6px);transition:opacity .18s ease,transform .18s cubic-bezier(.2,1.5,.4,1);box-shadow:0 10px 22px -10px rgba(0,0,0,.85);border:1px solid rgba(126,232,244,.55);overflow:hidden}',
     '.flins-pet-face[data-show="1"]{opacity:1;transform:scale(1) translateY(0)}',
     '.flins-pet-face img{width:100%;height:100%;display:block;border-radius:50%}',
     '.flins-pet-rice[data-landed="1"]{pointer-events:auto;cursor:grab;opacity:1}',
@@ -1738,9 +1744,43 @@
   }
 
   /** 聊天：不再在头顶挂输入框，直接用 prompt 取输入（气泡只显示回复） */
+  /** 聊天框（同 ChatBox）：贴在宠物旁边，回车发送，Esc 关闭 */
+  let petChatEl = null;
+  function petOpenChatBox() {
+    if (!petEl) return;
+    if (petChatEl) { const i = petChatEl.querySelector('input'); if (i) i.focus(); return; }
+    const box = el('div', { class: 'flins-pet-chat' });
+    const tip = el('div', { class: 'flins-pet-chat-tip', text: cfg.petApiKey ? '和她说点什么…' : '先右键「设置」填 API Key' });
+    const inp = el('input', { type: 'text', placeholder: '回车发送，Esc 关闭' });
+    inp.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        const v = inp.value.trim();
+        inp.value = '';
+        if (v) petChat(v);
+      } else if (e.key === 'Escape') {
+        box.remove();
+        petChatEl = null;
+      }
+    });
+    box.appendChild(tip);
+    box.appendChild(inp);
+    document.body.appendChild(box);
+    const r = petEl.getBoundingClientRect();
+    const bw = box.offsetWidth || 260;
+    let left = r.left - bw - 12;
+    if (left < 8) left = Math.min(window.innerWidth - bw - 8, r.right + 12);
+    box.style.left = Math.max(8, left) + 'px';
+    box.style.top = Math.max(8, r.top + 10) + 'px';
+    petChatEl = box;
+    inp.focus();
+    setTimeout(() => { if (petChatEl === box && !inp.value) { box.remove(); petChatEl = null; } }, 15000);
+  }
+
   function petOpenChat() {
-    const q = window.prompt('对她说点什么？');
-    if (q && q.trim()) petChat(q.trim());
+    // 没填 Key 就说 NO_KEY_LINES，否则打开聊天框
+    if (!cfg.petApiKey) { const l = petPick(NO_KEY_LINES); petSay(l[0], 5000, l[1]); return; }
+    petOpenChatBox();
   }
 
   // ── 抚摸（同 _begin_petting / _stroke） ─────────────────────────────
@@ -1928,6 +1968,47 @@
   }
 
   // ── 挂载 ─────────────────────────────────────────────────────────
+  /** 开机问候（同 _welcome，一次会话一次） */
+  function petWelcome() {
+    if (sessionStorage.getItem('flins-pet-welcomed')) return;
+    sessionStorage.setItem('flins-pet-welcomed', '1');
+    setTimeout(() => {
+      petSay('哼，来了。主人，今天也要好好活着哦。', 6000, 'happy');
+    }, 1600);
+  }
+
+  /** 随机搭话（同 _maybe_idle_chat） */
+  let petIdleTimer = null;
+  function petMaybeIdleChat() {
+    clearInterval(petIdleTimer);
+    petIdleTimer = setInterval(() => {
+      if (!petEl) return;
+      const b = document.querySelector('.flins-pet-bubble[data-show="1"]');
+      if (b) return;
+      if (Math.random() < 0.5) return;
+      const l = petPick(IDLE_LINES);
+      petSay(l[0], 4200, l[1]);
+    }, 180000);
+  }
+
+  /** 夹在屏幕内（同 ensure_on_screen） */
+  function petEnsureOnScreen() {
+    if (!petEl) return;
+    const r = petEl.getBoundingClientRect();
+    const maxX = Math.max(0, window.innerWidth - r.width);
+    const maxY = Math.max(0, window.innerHeight - r.height);
+    let x = r.left;
+    let y = r.top;
+    if (x < 0 || x > maxX || y < 0 || y > maxY) {
+      x = Math.max(0, Math.min(maxX, x));
+      y = Math.max(0, Math.min(maxY, y));
+      petEl.style.left = x + 'px';
+      petEl.style.top = y + 'px';
+      petEl.style.right = 'auto';
+      petEl.style.bottom = 'auto';
+    }
+  }
+
   function petMount(force) {
     if (!document.body) {
       if (!petMountTimer) petMountTimer = setTimeout(() => { petMountTimer = null; petSync(); }, 200);
@@ -2043,6 +2124,7 @@
     document.addEventListener('click', petCloseMenu, true);
 
     setTimeout(() => { try { petCheckMeal(); } catch (err) { /* 忽略 */ } }, 2500);
+    try { petWelcome(); petMaybeIdleChat(); petEnsureOnScreen(); } catch (err) { /* 忽略 */ }
     clearInterval(petMealTimer);
     petMealTimer = setInterval(() => { try { petCheckMeal(); } catch (err) { /* 忽略 */ } }, 60000);
   }
