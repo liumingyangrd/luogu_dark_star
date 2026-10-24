@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      1.7.1.202610241927
+// @version      1.7.2.202610241936
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -1337,7 +1337,7 @@
     '.flins-pet-face{position:fixed;width:46px;height:46px;border-radius:50%;z-index:2147483000;pointer-events:none;opacity:0;transform:scale(.55) translateY(6px);transition:opacity .18s ease,transform .18s cubic-bezier(.2,1.5,.4,1);box-shadow:0 10px 22px -10px rgba(0,0,0,.85);border:1px solid rgba(126,232,244,.55);overflow:hidden}',
     '.flins-pet-face[data-show="1"]{opacity:1;transform:scale(1) translateY(0)}',
     '.flins-pet-face img{width:100%;height:100%;display:block;border-radius:50%}',
-    '.flins-pet-rice[data-landed="1"]{pointer-events:auto;cursor:grab}',
+    '.flins-pet-rice[data-landed="1"]{pointer-events:auto;cursor:grab;opacity:1}',
     '.flins-pet-rice[data-drag="1"]{cursor:grabbing;animation:none!important;transform:none!important;opacity:1!important}',
     '.flins-pet-rice[data-hint="1"]{filter:drop-shadow(0 0 8px rgba(126,232,244,.9))}',
   ].join('');
@@ -1428,6 +1428,7 @@
   let petBubble = null;
   let petMenuEl = null;
   let petSayTimer = null;
+  let petMountTimer = null;
   let petExprTimer = null;
 
   function petPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -1491,6 +1492,8 @@
     setTimeout(() => {
       const groundY = Math.min(window.innerHeight - 90, r.top + r.height + 16);
       bowl.style.top = groundY + 'px';
+      bowl.removeAttribute('data-fall');   // 去掉动画：否则拖动松手时 data-drag 一撤，动画会重放（又「从天而降」）
+      bowl.style.opacity = '1';
       bowl.setAttribute('data-landed', '1');
       petSetExpr('hungry', 4200);
       petSay('饭掉地上了…拖过来喂我嘛', 4200);
@@ -1687,7 +1690,16 @@
   }
 
   function petMount(force) {
-    if (!document.body) return;
+    // apply() 在 document-start 就会跑，那时 document.body 还不存在。
+    // 早期实现直接 return，之后没有人再触发挂载 —— 「配置里开着宠物却什么都没有」。
+    if (!document.body) {
+      if (!petMountTimer) {
+        petMountTimer = setTimeout(() => { petMountTimer = null; petSync(); }, 200);
+      }
+      return;
+    }
+    // 被别的东西移出文档时，引用会变成「僵尸」，也要重建
+    if (petEl && !document.contains(petEl)) petEl = null;
     if (petEl && !force) return;
     if (force && petEl) petEl.remove();
     addStyle(PET_CSS, PET_STYLE_ID);
@@ -1776,6 +1788,8 @@
   }
 
   function petUnmount() {
+    clearTimeout(petMountTimer);
+    petMountTimer = null;
     if (petEl) petEl.remove();
     if (petBubble) petBubble.remove();
     if (petMenuEl) petMenuEl.remove();
