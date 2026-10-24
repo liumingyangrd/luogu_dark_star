@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      1.7.3.202610241944
+// @version      1.8.0.202610241947
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -1350,6 +1350,8 @@
     'html.flins-light .flins-pet-menu{background:rgba(255,255,255,.99);border-color:rgba(52,84,148,.24)}',
     'html.flins-light .flins-pet-menu button{color:#243354}',
     'html.flins-light .flins-pet-menu button:hover{background:rgba(52,84,148,.12);color:#1B4A8C}',
+    '.flins-pet-chat{position:fixed;z-index:2147483000;padding:5px;border-radius:12px;background:rgba(13,19,44,.97);border:1px solid rgba(130,156,216,.4);box-shadow:0 20px 44px -22px rgba(0,0,0,.95)}',
+    '.flins-pet-chat input{width:240px;padding:7px 10px;border:0;border-radius:8px;background:rgba(255,255,255,.06);color:var(--flins-text,#E6EBFB);font:500 12.5px/1.4 var(--flins-font-body,system-ui);outline:none}',
     '.flins-pet-face{position:fixed;width:46px;height:46px;border-radius:50%;z-index:2147483000;pointer-events:none;opacity:0;transform:scale(.55) translateY(6px);transition:opacity .18s ease,transform .18s cubic-bezier(.2,1.5,.4,1);box-shadow:0 10px 22px -10px rgba(0,0,0,.85);border:1px solid rgba(126,232,244,.55);overflow:hidden}',
     '.flins-pet-face[data-show="1"]{opacity:1;transform:scale(1) translateY(0)}',
     '.flins-pet-face img{width:100%;height:100%;display:block;border-radius:50%}',
@@ -1440,6 +1442,9 @@
     feed: ['好吃！', '谢谢你～', '再来一碗？', '米饭万岁！', '唔……好饱。'],
     pat: ['嘿嘿…', '唔，好舒服。', '再摸摸嘛。', '哼哼～', '别、别摸太久。'],
     hungry: ['肚子有点饿……', '可以喂我一碗饭吗？', '右键我，有「喂大白饭」。'],
+    stroke: ['呼……', '唔，再摸摸。', '哼，勉强让你摸。', '好舒服……', '别停嘛。'],
+    sleep: ['呼……睡着了，不许吵。'],
+    firstPet: ['……可以摸摸，但不许多摸。'],
   };
 
   let petEl = null;
@@ -1448,6 +1453,34 @@
   let petSayTimer = null;
   let petMountTimer = null;
   let petExprTimer = null;
+
+  /** 按一句话猜表情（对齐参考项目 guess_expr） */
+  const PET_EXPR_WORDS = {
+    happy: ['谢谢', '喜欢', '好吃', '开心', '好棒', '哈哈'],
+    shy: ['别', '害羞', '讨厌', '唔'],
+    angry: ['哼', '生气', '不许', '笨蛋'],
+    sad: ['对不起', '难过', '没', '哭'],
+    hungry: ['饿', '饭', '吃'],
+    comfy: ['舒服', '睡', '呼'],
+    surprised: ['啊', '什么', '真的'],
+  };
+  function petGuessExpr(text) {
+    const s = String(text || '');
+    let best = 'sprite';
+    let score = 0;
+    Object.keys(PET_EXPR_WORDS).forEach((name) => {
+      PET_EXPR_WORDS[name].forEach((kw) => {
+        if (s.indexOf(kw) >= 0) {
+          const n = s.split(kw).length - 1;
+          if (n > score) { score = n; best = name; }
+        }
+      });
+    });
+    if (score > 0) return best;
+    if (s.indexOf('？') >= 0 || s.indexOf('?') >= 0) return 'speechless';
+    if (s.indexOf('！') >= 0 || s.indexOf('!') >= 0) return 'happy';
+    return 'sprite';
+  }
 
   function petPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -1495,6 +1528,40 @@
   }
 
   /** 喂饭：一碗米饭从天上掉下来，落到嘴边 → 被吃掉 → 加饱食度 */
+  /** 饭点窗口：07:30 / 12:30 / 18:30，前后 45 分钟 */
+  const PET_MEALS = ['07:30', '12:30', '18:30'];
+  const PET_MEAL_WINDOW = 45;
+  function petToday() {
+    const d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+  function petMealSlot() {
+    const now = new Date();
+    for (let i = 0; i < PET_MEALS.length; i += 1) {
+      const parts = PET_MEALS[i].split(':');
+      const start = new Date(now);
+      start.setHours(+parts[0], +parts[1], 0, 0);
+      if (Math.abs(now - start) <= PET_MEAL_WINDOW * 60000) return PET_MEALS[i];
+    }
+    return null;
+  }
+  function petCheckMeal() {
+    const slot = petMealSlot();
+    const fed = cfg.petFedSlots || {};
+    if (slot && fed[petToday()] !== slot) {
+      petSetExpr('hungry', 9000);
+      petSay(petPick(PET_LINES.hungry), 9000);
+      return;
+    }
+  }
+  function petMarkFed() {
+    const slot = petMealSlot();
+    if (!slot) return;
+    cfg.petFedSlots = cfg.petFedSlots || {};
+    cfg.petFedSlots[petToday()] = slot;
+    store.write(cfg);
+  }
+
   function petFeed() {
     if (!petEl) return;
     const r = petEl.getBoundingClientRect();
@@ -1556,6 +1623,34 @@
     } finally {
       petChatBusy = false;
     }
+  }
+
+  /** 双击弹出聊天输入框（对齐参考项目：双击开聊天，而不是换形象） */
+  let petChatEl = null;
+  function petOpenChatBox() {
+    if (!petEl) return;
+    if (petChatEl) { petChatEl.querySelector('input').focus(); return; }
+    const box = el('div', { class: 'flins-pet-chat' });
+    const inp = el('input', { type: 'text', placeholder: cfg.petApiKey ? '对她说点什么…（回车发送）' : '先去面板填 API Key' });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const v = inp.value.trim();
+        inp.value = '';
+        if (v) petChat(v);
+      } else if (e.key === 'Escape') {
+        box.remove();
+        petChatEl = null;
+      }
+      e.stopPropagation();
+    });
+    box.appendChild(inp);
+    document.body.appendChild(box);
+    const r = petEl.getBoundingClientRect();
+    box.style.left = Math.max(8, Math.min(r.left - 90, window.innerWidth - 260)) + 'px';
+    box.style.top = Math.max(8, r.top - 46) + 'px';
+    petChatEl = box;
+    inp.focus();
+    setTimeout(() => { if (!inp.value && petChatEl === box) { box.remove(); petChatEl = null; } }, 12000);
   }
 
   function petCloseMenu() {
@@ -1695,6 +1790,7 @@
     cfg.petLove = (cfg.petLove || 0) + 2;
     store.write(cfg);
     petPop('+22 饱食');
+    petMarkFed();
     petApplySize(true);
     setTimeout(() => bowl.remove(), 700);
   }
@@ -1722,6 +1818,38 @@
 
   /** 点击时随机换一个「有反应」的表情 */
   const PET_CLICK_EXPR = ['happy', 'shy', 'surprised', 'comfy', 'angry'];
+
+  /** 按住 350ms 不动 = 开始抚摸；每 380ms 一次（对齐参考项目 _stroke） */
+  let petHoldTimer = null;
+  let petStrokeTimer = null;
+  let petPetCount = 0;
+  function petBeginPetting() {
+    if (!petEl) return;
+    petPetCount = 0;
+    petSay(petPick(PET_LINES.firstPet), 4200);
+    petSetExpr('comfy', 4200);
+    clearInterval(petStrokeTimer);
+    petStrokeTimer = setInterval(() => {
+      if (!petEl) { clearInterval(petStrokeTimer); return; }
+      petPetCount += 1;
+      if (petPetCount >= 8) {
+        clearInterval(petStrokeTimer);
+        petSay(petPick(PET_LINES.sleep), 5000);
+        petSetExpr('comfy', 5000);
+        return;
+      }
+      cfg.petLove = (cfg.petLove || 0) + 1;
+      store.write(cfg);
+      petSay(petPick(PET_LINES.stroke), 2800);
+      petSetExpr('comfy', 2800);
+    }, 380);
+  }
+  function petEndPetting() {
+    clearTimeout(petHoldTimer);
+    clearInterval(petStrokeTimer);
+    petHoldTimer = null;
+    petStrokeTimer = null;
+  }
 
   function petPet() {
     petFx('data-jump', 520);
@@ -1804,6 +1932,7 @@
     }
     document.body.appendChild(petEl);
     petApplySize(false);
+    setTimeout(() => { try { petCheckMeal(); } catch (e) { /* 忽略 */ } }, 2500);
 
     // 拖拽
     let dragging = false;
@@ -1819,6 +1948,8 @@
       offX = e.clientX - r.left;
       offY = e.clientY - r.top;
       petEl.setPointerCapture(e.pointerId);
+      clearTimeout(petHoldTimer);
+      petHoldTimer = setTimeout(() => { if (dragging && !moved) petBeginPetting(); }, 350);
     });
     petEl.addEventListener('pointermove', (e) => {
       if (!dragging) return;
@@ -1848,6 +1979,8 @@
       petEl.style.width = Math.round(base[0] * cfg.petScale) + 'px';
       petEl.style.height = Math.round(base[1] * cfg.petScale) + 'px';
     }, { passive: false });
+
+    petEl.addEventListener('dblclick', (e) => { e.preventDefault(); petOpenChatBox(); });
 
     petEl.addEventListener('contextmenu', (e) => {
       e.preventDefault();
