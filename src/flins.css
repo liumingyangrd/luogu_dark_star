@@ -3373,3 +3373,49 @@ html.flins-light .dropdown li.active {
   background: rgba(52, 84, 148, 0.12) !important;
   color: #1B4A8C !important;
 }
+/* ──────────────────────────────────────────────────────────────────────────
+   25. 宽表格的横向滚动条
+
+   洛谷把帖子正文包在 .lfe-marked-wrap.marked 里，主题为了圆角把它设成
+   overflow: hidden —— 结果宽表格被直接裁掉，下面那条横向滚动条也没了
+   （用户反馈：原版有滚动条，改版没有）。
+   这里显式放开横向滚动，并给滚动条主题配色，保证能看见、能拖。
+   ────────────────────────────────────────────────────────────────────────── */
+html.flins-dark .lfe-marked-wrap,
+html.flins-dark .lfe-marked-wrap.marked,
+html.flins-light .lfe-marked-wrap,
+html.flins-light .lfe-marked-wrap.marked {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin;
+}
+html.flins-dark .lfe-marked-wrap::-webkit-scrollbar,
+html.flins-light .lfe-marked-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+html.flins-dark .lfe-marked-wrap::-webkit-scrollbar-track {
+  background: rgba(6, 9, 26, 0.45);
+  border-radius: 6px;
+}
+html.flins-dark .lfe-marked-wrap::-webkit-scrollbar-thumb {
+  background: rgba(var(--flins-accent-rgb), 0.55);
+  border-radius: 6px;
+  border: 2px solid rgba(6, 9, 26, 0.45);
+}
+html.flins-light .lfe-marked-wrap::-webkit-scrollbar-track {
+  background: rgba(52, 84, 148, 0.10);
+  border-radius: 6px;
+}
+html.flins-light .lfe-marked-wrap::-webkit-scrollbar-thumb {
+  background: rgba(52, 84, 148, 0.45);
+  border-radius: 6px;
+}
+/* 表格自然撑开，由 .lfe-marked-wrap 横向滚动（滚动条样式见上） */
+html.flins-dark .lfe-marked-wrap table,
+html.flins-light .lfe-marked-wrap table {
+  display: table !important;
+  width: auto !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  overflow: visible !important;
+}
