@@ -129,7 +129,7 @@ mkdirSync(join(EXT, 'icons'), { recursive: true });
 // 版本号与用户脚本保持一致（同一次构建），这样 edge://extensions 里一眼能看出是哪一版。
 // ⚠️ Chrome 的 manifest version 必须是 1~4 段纯数字、每段 ≤ 65535，
 //    所以这里用「年.月日.时分」三段（2026.1006.1441），不能塞时间戳长整数。
-const extVersion = `${d.getFullYear()}.${p2(d.getMonth() + 1)}${p2(d.getDate())}.${p2(d.getHours())}${p2(d.getMinutes())}`;
+const extVersion = `${d.getFullYear()}.${(d.getMonth() + 1) * 100 + d.getDate()}.${d.getHours() * 100 + d.getMinutes()}`;
 
 // content.js 就是同一个脚本：里面已经写好 GM_* 缺失时的兜底分支
 writeFileSync(join(EXT, 'content.js'), user, 'utf8');
