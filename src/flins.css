@@ -1710,11 +1710,31 @@ html.flins-layout-flins .top-bar > .right .user-nav a:hover {
 }
 
  
+/* 私信气泡本体。洛谷只给了个 6px 的 padding，发一个半角字符时气泡宽度只有 21px，
+   变成一个竖条，尾巴（::after）和删除按钮直接糊在字上（issue #7）。
+   这里给气泡一个像样的最小宽度和圆角。 */
+html.flins-layout-flins .message-block .message {
+  min-width: 44px !important;
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+  line-height: 1.5 !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+html:not(.flins-light) .message-block .message {
+  background: rgba(26, 34, 72, 0.92) !important;
+  color: var(--flins-text) !important;
+}
+html.flins-light .message-block .message {
+  background: #FFFFFF !important;
+  color: var(--flins-text) !important;
+}
+
 html:not(.flins-light) .message-block.right .message::after {
-  border-left-color: var(--flins-surface) !important;
+  border-left-color: rgba(26, 34, 72, 0.92) !important;
 }
 html:not(.flins-light) .message-block.left .message::after {
-  border-right-color: var(--flins-surface) !important;
+  border-right-color: rgba(26, 34, 72, 0.92) !important;
 }
  
 html.flins-light .message-block.right .message::after {
