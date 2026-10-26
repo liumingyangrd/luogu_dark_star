@@ -2899,6 +2899,59 @@ html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .score + .score + .s
   padding-block: 0 !important;
 }
 
+/* ── 比赛排行榜（#scoreboard）─────────────────────────────────────────────
+   同样的毛病再重一遍：表头是 table-row、按内容收缩到 2337px，数据行是主题的 flex 卡片
+   （1394px），题目列又是固定 88px，于是表头列对不上、最后一题还被卡片裁掉。
+   题目数量随比赛变，写死列数没用 —— 用「前 3 列固定 + 后面的列自动按 88px 排」，
+   再让整块横向滚动（表头和数据行在同一个滚动容器里，滚动时不会散开）。 */
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin;
+  padding-bottom: 8px !important;
+}
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .header-wrap {
+  display: block !important;
+  width: max-content !important;
+  min-width: 100% !important;
+  padding: 10px 30px 4px !important;
+  box-sizing: border-box !important;
+}
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .row-wrap {
+  width: max-content !important;
+  min-width: 100% !important;
+}
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .header,
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .row-wrap > .row {
+  display: grid !important;
+  grid-template-columns: 88px 236px 112px !important;
+  grid-auto-columns: 88px !important;
+  grid-auto-flow: column !important;
+  align-items: center !important;
+  column-gap: 0 !important;
+}
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .header > *,
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .row-wrap > .row > * {
+  min-width: 0 !important;
+  width: auto !important;
+  padding: 0 8px !important;
+  text-align: center !important;
+}
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .row-wrap > .row > .user,
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .header > *:nth-child(2) {
+  text-align: left !important;
+}
+/* 自己那一行洛谷会刷成浅色底（浅色主题里的高亮），深色下变成白条 + 白字，
+   这里把单元格底色抹掉，交给卡片背景。 */
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .row-wrap > .row > * {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+/* 表头和数据行都在滚动容器里，卡片圆角贴着滚动条会露白，这里把右侧留出来 */
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .problem):has(> .row-wrap > .row > .rank) .row-wrap {
+  padding-right: 8px !important;
+}
+
  
 html.flins-layout-flins .lg-index-content .lg-right .lg-article > p {
   margin: 6px 0 !important;

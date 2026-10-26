@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      2.0.6
+// @version      2.0.7
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -1037,6 +1037,7 @@
         el('button', { type: 'button', text: '摸摸头', onclick: () => { if (!cfg.pet) { cfg.pet = true; commit(); } petMount(true); petPet(); } }),
       ]),
       el('p', { class: 'flins-note', text: 'API Key / 模型 / 饭点都在宠物的右键「⚙ 设置」里填。' }),
+      el('p', { class: 'flins-note', text: '形象说明：「大肥鱼」是基于 DeepSeek 鲸鱼形象的二次创作，非官方素材；DeepSeek 形象权利归深度求索所有，与本项目无隶属关系。' }),
       el('p', { class: 'flins-note', text: '右键可以「喂大白饭」——米饭会掉到地上，**要自己拖到她嘴边**才吃得到；拖偏了会说「拖到我嘴边才行」。点一下会换表情，双击换形象，滚轮缩放。饱食度每小时 -3，饿了会自己说话。' }),
     ]));
 
