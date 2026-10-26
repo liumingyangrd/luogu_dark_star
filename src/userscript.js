@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      2.0.4
+// @version      2.0.5
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -856,12 +856,18 @@
   }
 
   function seg(current, options, onPick) {
-    return el('div', { class: 'flins-seg' }, options.map((o) => el('button', {
+    // 点下去先自己翻 aria-pressed：有些选项（比如宠物形象）只刷新本体、不重建面板，
+    // 光等 rebuildPanel 的话高亮要等别的开关动一下才跟上（issue #5）。
+    const btns = options.map((o) => el('button', {
       type: 'button',
       'aria-pressed': String(current === o.value),
       text: o.label,
-      onclick: () => onPick(o.value),
-    })));
+    }));
+    btns.forEach((btn, i) => btn.addEventListener('click', () => {
+      btns.forEach((b, j) => b.setAttribute('aria-pressed', String(i === j)));
+      onPick(options[i].value);
+    }));
+    return el('div', { class: 'flins-seg' }, btns);
   }
 
   function slider(label, value, min, max, step, fmt, onInput) {
@@ -2202,12 +2208,16 @@
     petEndPetting();
     if (petEl) petEl.remove();
     if (petBubble) petBubble.remove();
-    if (petMenuEl) petMenuEl.remove();
-    const pop = document.querySelector('.flins-pet-pop');
-    if (pop) pop.remove();
+    if (petMenuEl) petMenuEl.remove();
+    // 饭碗是直接挂到 body 上的独立节点，不跟着 petEl 走；
+    // 收宠物/关开关时必须单独清掉，否则地上一碗饭永远留着（issue #6）。
+    document.querySelectorAll('.flins-pet-rice').forEach((n) => n.remove());
+    document.querySelectorAll('.flins-pet-pop').forEach((n) => n.remove());
+    if (petChatEl) { petChatEl.remove(); petChatEl = null; }
+    if (petSetEl) { petSetEl.remove(); petSetEl = null; }
     petEl = null;
     petBubble = null;
-    petMenuEl = null;
+    petMenuEl = null;
     document.removeEventListener('click', petCloseMenu, true);
   }
 

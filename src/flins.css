@@ -2571,6 +2571,40 @@ html.flins-layout-flins .list-wrap .header-wrap > .header:has(> .header-containe
   padding-right: 12px !important;
 }
 
+/* ── 排行榜（咕值 / 等级分）的列对齐 ────────────────────────────────────────
+   洛谷这两张榜的表头还是老式 table-row（.header-wrap > .header，宽度按内容收缩），
+   而数据行被主题改成了 flex 卡片，两套列宽算法完全不同 —— 表头会缩成一小坨
+   贴在左边，和下面数字对不上（用户截图）。
+   这里让表头和数据行共用同一套网格：等级分榜 6 列，咕值榜 9 列。 */
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .user-count) .header-wrap,
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .score + .score + .score) .header-wrap {
+  display: block !important;
+  width: 100% !important;
+  padding: 12px 24px 6px 33px !important;
+  box-sizing: border-box !important;
+}
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .user-count) .header,
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .user-count) .row-wrap > .row {
+  display: grid !important;
+  grid-template-columns: 60px minmax(140px, 200px) 100px minmax(0, 1fr) 112px 68px !important;
+  align-items: center !important;
+  column-gap: 0 !important;
+}
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .score + .score + .score) .header,
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .score + .score + .score) .row-wrap > .row {
+  display: grid !important;
+  grid-template-columns: 56px minmax(200px, 1fr) repeat(6, 64px) 92px !important;
+  align-items: center !important;
+  column-gap: 0 !important;
+}
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .user-count) .header > *,
+html.flins-layout-flins .list-wrap:has(> .row-wrap > .row > .score + .score + .score) .header > * {
+  min-width: 0 !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  padding-block: 0 !important;
+}
+
  
 html.flins-layout-flins .lg-index-content .lg-right .lg-article > p {
   margin: 6px 0 !important;
@@ -3310,8 +3344,11 @@ html.flins-dark .row .title a:not([style*="color"]) {
   color: var(--flins-heading) !important;
   -webkit-text-fill-color: currentcolor !important;
 }
-html.flins-dark .row .content,
-html.flins-dark .row .content * {
+/* 注意 :not(.lfe-marked-wrap)——讨论区的每层回复也是「.row > .l-card.comment」，
+   回帖正文的容器正好叫 .lfe-marked-wrap.content，不加排除会把整段正文一起刷成
+   次要灰（#A3AFCE），深色下几乎看不清（issue #4）。摘要才该是灰的，正文不是。 */
+html.flins-dark .row .content:not(.lfe-marked-wrap),
+html.flins-dark .row .content:not(.lfe-marked-wrap) * {
   color: var(--flins-text-muted) !important;
   -webkit-text-fill-color: currentcolor !important;
 }
@@ -3323,9 +3360,34 @@ html.flins-dark .row .info,
 html.flins-dark .row .lfe-caption {
   color: var(--flins-text-dim) !important;
 }
-html.flins-light .row .content,
-html.flins-light .row .content * {
+html.flins-light .row .content:not(.lfe-marked-wrap),
+html.flins-light .row .content:not(.lfe-marked-wrap) * {
   color: #4A5677 !important;
+}
+/* 兜底：回帖正文永远是正文色，不被上面的摘要规则顺带染灰 —— issue #4。
+   讨论区回复的正文容器是「.lfe-marked-wrap.content」（已在上面排除），
+   专栏回复则是「.l-card.reply-item > .content」（不加这条会被刷成 #A3AFCE）。 */
+html.flins-dark .row .l-card.comment .content,
+html.flins-dark .row .l-card.comment .content *,
+html.flins-dark .row .l-card.reply-item .content,
+html.flins-dark .row .l-card.reply-item .content *,
+html.flins-dark .row .lfe-marked,
+html.flins-dark .row .lfe-marked p,
+html.flins-dark .row .lfe-marked li,
+html.flins-dark .row .lfe-marked td {
+  color: var(--flins-text) !important;
+  -webkit-text-fill-color: currentcolor !important;
+}
+html.flins-light .row .l-card.comment .content,
+html.flins-light .row .l-card.comment .content *,
+html.flins-light .row .l-card.reply-item .content,
+html.flins-light .row .l-card.reply-item .content *,
+html.flins-light .row .lfe-marked,
+html.flins-light .row .lfe-marked p,
+html.flins-light .row .lfe-marked li,
+html.flins-light .row .lfe-marked td {
+  color: var(--flins-text) !important;
+  -webkit-text-fill-color: currentcolor !important;
 }
 /* ⚠️⚠️ 文章广场标题的「假白」问题：
    computed color 已经是浅色，但洛谷同时写了 -webkit-text-fill-color: rgba(0,0,0,.85)，
