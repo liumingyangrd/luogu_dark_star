@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      2.0.9.202610262035
+// @version      2.1.0.202610262058
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -84,6 +84,9 @@
     fabImage: '',            
     emblemImage: '',         
     lampImage: '',           
+    pmNotify: true,          
+    pmDesktop: false,        
+    pmWorkerUrl: '',         
   };
 
   /** 把外部来的对象合并进默认配置。
@@ -554,6 +557,7 @@
     // 开关切换时同步行内样式：关掉就撤销我们加的 !important，让主题色接管
     try { if (cfg.pluginColorCompat) boostPluginColors(); else unboostPluginColors(); } catch (e) { /* 忽略 */ }
     try { petSync(); } catch (e) { /* 忽略 */ }
+    try { pmSync(); } catch (e) { /* 忽略 */ }
     
     for (const s of ['lamp', 'moon', 'none']) {
       root.classList.toggle('flins-orn-' + s, cfg.ornamentStyle === s);
@@ -1041,6 +1045,32 @@
       el('p', { class: 'flins-note', text: '右键可以「喂大白饭」——米饭会掉到地上，**要自己拖到她嘴边**才吃得到；拖偏了会说「拖到我嘴边才行」。点一下会换表情，双击换形象，滚轮缩放。饱食度每小时 -3，饿了会自己说话。' }),
     ]));
 
+    pmStatusEl = el('p', { class: 'flins-note', text: pmStateText(), 'data-state': pmState });
+    panelEl.appendChild(el('div', { class: 'flins-sec' }, [
+      el('div', { class: 'flins-lab' }, [el('span', { text: '私信提醒' })]),
+      toggle('新私信在右下角弹提示', cfg.pmNotify, (v) => { cfg.pmNotify = v; commit(); }),
+      toggle('标签页在后台时弹系统通知', cfg.pmDesktop, (v) => {
+        cfg.pmDesktop = v;
+        if (v && 'Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission().catch(() => { /* 用户拒绝就算了 */ });
+        }
+        commit();
+      }),
+      pmStatusEl,
+      el('div', { class: 'flins-row' }, [
+        el('button', {
+          type: 'button', text: '发个测试气泡',
+          onclick: () => {
+            pmToast({
+              content: '这是一条测试私信，点一下就跳到私信页。',
+              target: { name: '暗星 · 测试', uid: 1 },
+            });
+          },
+        }),
+      ]),
+      el('p', { class: 'flins-note', text: '只连接洛谷自己的私信通道（ws2.luogu.com.cn），消息不经任何第三方服务器，也不会发出去。' }),
+    ]));
+
 
     
     let lampFile;
@@ -1354,7 +1384,8 @@
     '.flins-pet-chat input{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid rgba(130,156,216,.3);border-radius:8px;background:rgba(255,255,255,.06);color:#E6EBFB;font:500 12.5px/1.4 var(--flins-font-body,system-ui);outline:none}',
     '.flins-pet-chat input:focus{border-color:rgba(126,232,244,.7)}',
     'html.flins-light .flins-pet-chat{background:#fff;border-color:#ccd8ee}',
-    'html.flins-light .flins-pet-chat input{background:#fff;color:#21252f;border-color:#ccd8ee}',    '.flins-pet-face{position:fixed;width:46px;height:46px;border-radius:50%;z-index:2147483000;pointer-events:none;opacity:0;transform:scale(.55) translateY(6px);transition:opacity .18s ease,transform .18s cubic-bezier(.2,1.5,.4,1);box-shadow:0 10px 22px -10px rgba(0,0,0,.85);border:1px solid rgba(126,232,244,.55);overflow:hidden}',
+    'html.flins-light .flins-pet-chat input{background:#fff;color:#21252f;border-color:#ccd8ee}',
+    '.flins-pet-face{position:fixed;width:46px;height:46px;border-radius:50%;z-index:2147483000;pointer-events:none;opacity:0;transform:scale(.55) translateY(6px);transition:opacity .18s ease,transform .18s cubic-bezier(.2,1.5,.4,1);box-shadow:0 10px 22px -10px rgba(0,0,0,.85);border:1px solid rgba(126,232,244,.55);overflow:hidden}',
     '.flins-pet-face[data-show="1"]{opacity:1;transform:scale(1) translateY(0)}',
     '.flins-pet-face img{width:100%;height:100%;display:block;border-radius:50%}',
     '.flins-pet-rice[data-landed="1"]{pointer-events:auto;cursor:grab;opacity:1}',
@@ -1533,9 +1564,11 @@
     '.flins-pet[data-peek="1"]{overflow:hidden;border-radius:46px 46px 0 0}',
     '.flins-pet[data-peek="1"] .flins-pet-img{width:100%!important;height:auto!important;object-fit:initial!important;object-position:top center!important;display:block}',
     '.flins-pet[data-peek="1"] svg{height:auto!important;width:100%!important}',
-        '.flins-pet-menu .sub{padding:2px 10px;font-size:11px;color:rgba(150,162,196,.8)}',
+    
+    '.flins-pet-menu .sub{padding:2px 10px;font-size:11px;color:rgba(150,162,196,.8)}',
     '.flins-pet-menu .grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}',
-    '.flins-pet-menu .grid button{text-align:center;padding:5px 4px;font-size:11.5px}',    '.flins-pet-set{position:fixed;z-index:2147483001;left:50%;top:50%;transform:translate(-50%,-50%);width:420px;max-width:calc(100vw - 32px);padding:18px;border-radius:16px;background:rgba(13,19,44,.99);border:1px solid rgba(130,156,216,.35);box-shadow:0 30px 70px -30px rgba(0,0,0,.95)}',
+    '.flins-pet-menu .grid button{text-align:center;padding:5px 4px;font-size:11.5px}',
+    '.flins-pet-set{position:fixed;z-index:2147483001;left:50%;top:50%;transform:translate(-50%,-50%);width:420px;max-width:calc(100vw - 32px);padding:18px;border-radius:16px;background:rgba(13,19,44,.99);border:1px solid rgba(130,156,216,.35);box-shadow:0 30px 70px -30px rgba(0,0,0,.95)}',
     '.flins-pet-set-title{font:700 15px/1.3 var(--flins-font-body,system-ui);color:#EAF1FF;margin-bottom:6px}',
     '.flins-pet-set-tip{font:400 11.5px/1.5 var(--flins-font-body,system-ui);color:rgba(150,162,196,.9);margin:4px 0 8px}',
     '.flins-pet-set-row{margin-bottom:9px}',
@@ -2258,6 +2291,404 @@
   /** 旧名兼容：面板里传 true 的调用 */
   function petApplySize() {
     petApplyScale();
+  }
+
+  /* ── 私信提醒 ──────────────────────────────────────────────────────────
+     收到新私信时在右下角弹一张卡片；标签页在后台时改成系统通知。
+
+     消息从洛谷自己的 SharedWorker 桥里接：洛谷的聊天页把 ws 连接放在一个
+     fécDN 的 iframe（hub.frame.html）里，真正的数据在 fecdn 那个共享 worker 上。
+     所以分两支：
+
+       · fecdn 的 iframe 里：自己起一个同名 SharedWorker 桥接到
+         wss://ws2.luogu.com.cn/ws，订阅 Chat:<uid>，把 payload 转给父页面；
+       · 主页面：收 payload → 去重 → 弹气泡 / 系统通知。
+
+     这里是纯本机逻辑：只连洛谷自己的私信通道，不经过任何第三方服务器。
+     思路来自 Amazing-Luogu 的私信通知，见 README「授权与免责」。 */
+
+  const PM_STYLE_ID = 'flins-pm-style';
+  // 洛谷自己用的 worker 脚本；官方地址会通过 postMessage 送过来，这个只是断线时的兜底
+  const PM_WORKER_FALLBACK = 'https://fecdn.luogu.com.cn/columba/static.284b6b4b2a29779e.hub.worker.js';
+
+  const PM_CSS = [
+    '.flins-pm-stack{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:flex;flex-direction:column;gap:10px;pointer-events:none}',
+    // 设置面板开着的时候往左让开，不然会压在面板底下（面板 330px + 右边距）
+    'body:has(.flins-panel[data-open="1"]) .flins-pm-stack{right:362px}',
+    '.flins-pm-toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;width:300px;padding:10px 12px;border-radius:14px;',
+    '  background:rgba(14,20,48,.96);border:1px solid rgba(150,200,245,.24);box-shadow:0 14px 40px -18px rgba(0,0,0,.9);',
+    '  color:#E6EBFB;font-size:13px;line-height:1.5;cursor:pointer;transform:translateY(8px);opacity:0;',
+    '  transition:transform .18s ease,opacity .18s ease}',
+    '.flins-pm-toast[data-in="1"]{transform:none;opacity:1}',
+    '.flins-pm-toast:hover{border-color:rgba(96,224,240,.5)}',
+    '.flins-pm-avatar{width:38px;height:38px;border-radius:10px;object-fit:cover;flex:0 0 auto;background:rgba(255,255,255,.06)}',
+    '.flins-pm-body{min-width:0;flex:1 1 auto}',
+    '.flins-pm-name{font-weight:650;color:#F2F4F8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.flins-pm-text{color:#A3AFCE;margin-top:2px;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
+    '.flins-pm-close{flex:0 0 auto;border:0;background:transparent;color:#8B97B8;cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;border-radius:6px}',
+    '.flins-pm-close:hover{color:#F2F4F8;background:rgba(255,255,255,.08)}',
+    'html.flins-light .flins-pm-toast{background:rgba(255,255,255,.98);border-color:rgba(52,84,148,.22);color:#16203C;box-shadow:0 14px 40px -20px rgba(20,40,90,.35)}',
+    'html.flins-light .flins-pm-name{color:#101A33}',
+    'html.flins-light .flins-pm-text{color:#53628A}',
+    'html.flins-light .flins-pm-close{color:#7C89A8}',
+  ].join('\n');
+
+  let pmStarted = false;
+  let pmState = 'off';                 // off / connecting / on / retry
+  let pmBridge = null;
+  let pmSeenIds = new Set();
+  let pmStatusEl = null;
+  let pmStackEl = null;
+
+  function pmUid() {
+    try {
+      const ctx = document.getElementById('lentille-context');
+      if (ctx) {
+        const j = JSON.parse(ctx.textContent || ctx.innerHTML);
+        if (j && j.user && j.user.uid) {
+          return String(j.user.uid);
+        }
+      }
+      const inj = window._feInjection;
+      if (inj && inj.currentUser && inj.currentUser.uid) {
+        return String(inj.currentUser.uid);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function pmSetState(s) {
+    pmState = s;
+    if (pmStatusEl) {
+      pmStatusEl.textContent = pmStateText();
+      pmStatusEl.dataset.state = s;
+    }
+  }
+
+  function pmStateText() {
+    if (!cfg.pmNotify) {
+      return '未开启';
+    }
+    if (pmState === 'on') {
+      return '已连接';
+    }
+    if (pmState === 'watch') {
+      return '监听中';
+    }
+    if (pmState === 'retry') {
+      return '断线重连中…';
+    }
+    if (pmState === 'connecting') {
+      return '连接中…';
+    }
+    return '未连接';
+  }
+
+  /** 右下角那张卡片 */
+  function pmToast(msg) {
+    if (!document.body) {
+      return;
+    }
+    addStyle(PM_CSS, PM_STYLE_ID);
+    if (!pmStackEl || !document.contains(pmStackEl)) {
+      pmStackEl = el('div', { class: 'flins-pm-stack' });
+      document.body.appendChild(pmStackEl);
+    }
+    const name = String((msg.target && msg.target.name) || '私信');
+    const uid = (msg.target && msg.target.uid) || '';
+    const text = String(msg.content || '');
+    const avatar = el('img', {
+      class: 'flins-pm-avatar',
+      src: 'https://cdn.luogu.com.cn/upload/usericon/' + uid + '.png',
+      alt: '',
+    });
+    avatar.addEventListener('error', () => { avatar.style.visibility = 'hidden'; });
+
+    let timer = null;
+    const card = el('div', { class: 'flins-pm-toast', role: 'alert' });
+    const close = el('button', { class: 'flins-pm-close', type: 'button', text: '×', title: '关闭' });
+    close.addEventListener('click', (e) => {
+      e.stopPropagation();
+      card.remove();
+    });
+    card.appendChild(avatar);
+    card.appendChild(el('div', { class: 'flins-pm-body' }, [
+      el('div', { class: 'flins-pm-name', text: name }),
+      el('div', { class: 'flins-pm-text', text }),
+    ]));
+    card.appendChild(close);
+    card.addEventListener('click', () => {
+      window.open('https://www.luogu.com.cn/chat?uid=' + uid, '_blank', 'noopener');
+    });
+    // 鼠标停上去就暂停自动关闭，跟聊天软件一个手感
+    const arm = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => card.remove(), 9000);
+    };
+    card.addEventListener('pointerenter', () => clearTimeout(timer));
+    card.addEventListener('pointerleave', arm);
+
+    pmStackEl.appendChild(card);
+    requestAnimationFrame(() => card.setAttribute('data-in', '1'));
+    arm();
+    // 最多堆 4 张，老的先走
+    while (pmStackEl.children.length > 4) {
+      pmStackEl.firstElementChild.remove();
+    }
+  }
+
+  function pmDesktopNotify(msg) {
+    if (!cfg.pmDesktop) {
+      return;
+    }
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+      return;
+    }
+    if (!document.hidden && document.hasFocus()) {
+      return;
+    }
+    const name = String((msg.target && msg.target.name) || '私信');
+    const uid = (msg.target && msg.target.uid) || '';
+    const body = String(msg.content || '').slice(0, 100);
+    try {
+      const n = new Notification(name + ' 的私信', {
+        body,
+        icon: 'https://cdn.luogu.com.cn/upload/usericon/' + uid + '.png',
+        tag: 'flins-pm-' + uid,
+      });
+      n.onclick = () => {
+        window.open('https://www.luogu.com.cn/chat?uid=' + uid, '_blank', 'noopener');
+        n.close();
+      };
+      setTimeout(() => n.close(), 10000);
+    } catch (e) {
+      /* 系统通知失败不影响气泡 */
+    }
+  }
+
+  /** 一条私信 payload → 去重 → 气泡 + 系统通知 */
+  function pmHandlePayload(raw) {
+    let data = null;
+    try {
+      data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch (e) {
+      return;
+    }
+    const msg = data && data.message;
+    if (!msg || !msg.target) {
+      return;
+    }
+    if (msg.myself && msg.myself !== 'RX') {
+      return;                                    // 自己发出去的，不提醒
+    }
+    if (msg.id !== undefined) {
+      if (pmSeenIds.has(msg.id)) {
+        return;
+      }
+      pmSeenIds.add(msg.id);
+      if (pmSeenIds.size > 500) {
+        pmSeenIds.clear();
+      }
+    }
+    try {
+      pmToast(msg);
+      pmDesktopNotify(msg);
+    } catch (e) {
+      /* 单个提醒失败不该影响连接 */
+    }
+  }
+
+  /** fecdn iframe：起桥、订阅、把 payload 转给父页面 */
+  function pmBridgeInFrame() {
+    const parentOrigin = (() => {
+      try {
+        if (document.referrer) {
+          return new URL(document.referrer).origin;
+        }
+      } catch (e) {
+        /* 拿不到就按洛谷主站处理 */
+      }
+      return 'https://www.luogu.com.cn';
+    })();
+    const rid = () => Math.random().toString(16).slice(2, 11);
+    const newId = () => [rid(), rid(), rid(), rid()].join('-');
+
+    // 洛谷自己也会广播它的 worker 地址，能听到就用官方的，听不到再用内置兜底
+    window.addEventListener('message', (e) => {
+      const d = e.data;
+      if (d && typeof d === 'object' && d.type === 'luogu-ws-bridge-port' && typeof d.worker === 'string' && d.worker) {
+        if (cfg.pmWorkerUrl !== d.worker) {
+          cfg.pmWorkerUrl = d.worker;
+          store.write(cfg);
+        }
+      }
+    });
+
+    const askUid = () => new Promise((resolve) => {
+      let timer = null;
+      const done = (v) => {
+        if (timer) {
+          clearInterval(timer);
+        }
+        window.removeEventListener('message', onMsg);
+        resolve(v);
+      };
+      const onMsg = (e) => {
+        if (e.origin !== parentOrigin) {
+          return;
+        }
+        if (e.data && typeof e.data === 'object' && typeof e.data.__flinsPmUid === 'string' && e.data.__flinsPmUid) {
+          done(e.data.__flinsPmUid);
+        }
+      };
+      const ask = () => {
+        try {
+          window.parent.postMessage({ __flinsPmUidAsk: true }, parentOrigin);
+        } catch (e) {
+          /* 父页面不在就不问了 */
+        }
+      };
+      window.addEventListener('message', onMsg);
+      ask();
+      let n = 0;
+      timer = setInterval(() => {
+        n += 1;
+        if (n > 45) {
+          done(null);
+          return;
+        }
+        ask();
+      }, 2000);
+    });
+
+    const start = (uid) => {
+      let worker = null;
+      try {
+        worker = new SharedWorker(cfg.pmWorkerUrl || PM_WORKER_FALLBACK, {
+          type: 'module',
+          name: 'luogu-ws-shared-worker',
+        });
+      } catch (e) {
+        // 缓存的 worker 地址可能是旧版本的（文件名带 hash），起不来就清掉再试
+        cfg.pmWorkerUrl = '';
+        store.write(cfg);
+        pmSetState('retry');
+        setTimeout(() => {
+          pmStarted = false;
+          pmSync();
+        }, 30000);
+        return;
+      }
+      const cb = new MessageChannel();
+      const send = (path, list, transfer) => {
+        try {
+          worker.port.postMessage({ id: newId(), type: 'APPLY', path, argumentList: list }, transfer || []);
+        } catch (e) {
+          /* 关闭中的端口，忽略 */
+        }
+      };
+      cb.port1.addEventListener('message', (e) => {
+        const d = e.data;
+        try {
+          if (!d || typeof d !== 'object') {
+            return;
+          }
+          if (d.type === 'APPLY' && d.id) {
+            cb.port1.postMessage({ type: 'RAW', id: d.id });
+          }
+          if (d.type !== 'APPLY' || !Array.isArray(d.path)) {
+            return;
+          }
+          if (d.path[0] !== 'onEvent' || !Array.isArray(d.argumentList) || d.argumentList.length < 3) {
+            return;
+          }
+          const channel = d.argumentList[0] && d.argumentList[0].value;
+          const evt = d.argumentList[1] && d.argumentList[1].value;
+          const payload = d.argumentList[2] && d.argumentList[2].value;
+          if (evt === 'message' && typeof channel === 'string' && channel.indexOf('Chat:') === 0 && typeof payload === 'string') {
+            window.parent.postMessage({ __flinsPmPayload: payload }, parentOrigin);
+          }
+        } catch (err) {
+          /* 坏包直接丢 */
+        }
+      });
+      cb.port1.start();
+      worker.port.start();
+      send(['connect'], [
+        { type: 'RAW', value: 'wss://ws2.luogu.com.cn/ws' },
+        { type: 'RAW', value: false },
+        { type: 'HANDLER', name: 'proxy', value: cb.port2 },
+      ], [cb.port2]);
+      send(['subscribe'], [{ type: 'RAW', value: 'Chat:' + uid }, { type: 'RAW', value: '' }]);
+      pmBridge = {
+        close() {
+          try { worker.port.close(); } catch (e) { /* 忽略 */ }
+          try { cb.port1.close(); } catch (e) { /* 忽略 */ }
+        },
+      };
+      pmSetState('on');
+    };
+
+    askUid().then((uid) => {
+      if (!uid) {
+        return;
+      }
+      if (!cfg.pmNotify) {
+        return;
+      }
+      start(uid);
+    });
+  }
+
+  /** 主页面：收 iframe 转来的 payload，并把 uid 回给它 */
+  function pmBindMainFrame() {
+    window.addEventListener('message', (e) => {
+      const d = e.data;
+      if (!d || typeof d !== 'object') {
+        return;
+      }
+      if (d.__flinsPmUidAsk === true) {
+        if (!/^https:\/\/fecdn\.luogu\.com(\.cn)?$/.test(e.origin) || !e.source) {
+          return;
+        }
+        e.source.postMessage({ __flinsPmUid: pmUid() || '' }, e.origin);
+        return;
+      }
+      if (typeof d.__flinsPmPayload === 'string') {
+        pmHandlePayload(d.__flinsPmPayload);
+      }
+    });
+    // 主页面只负责收，真正的连接在 fecdn 那个 iframe 里，这里不谎报「已连接」
+    pmSetState('watch');
+  }
+
+  /** 开关一变就跟着起停 */
+  function pmSync() {
+    const isFrame = window !== window.top && /^fecdn\.luogu\.com(\.cn)?$/.test(location.hostname);
+    if (!cfg.pmNotify) {
+      if (pmBridge) {
+        try { pmBridge.close(); } catch (e) { /* 忽略 */ }
+        pmBridge = null;
+      }
+      pmSetState('off');
+      return;
+    }
+    if (pmStarted) {
+      return;
+    }
+    pmStarted = true;
+    pmSetState('connecting');
+    try {
+      if (isFrame) {
+        pmBridgeInFrame();
+      } else {
+        pmBindMainFrame();
+      }
+    } catch (e) {
+      pmSetState('retry');
+    }
   }
 
   function commit() {
