@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      2.0.3.202610260811
+// @version      2.0.4.202610260900
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -1649,7 +1649,7 @@
     const base = SZ[st] || SZ.s;
     petEl.setAttribute('data-size', st);
     petEl.style.width = Math.round(base[0] * sc) + 'px';
-    const peekH = Math.round(base[1] * sc * 0.42);   // 只留脑袋，约整身的 42%
+    const peekH = Math.round(base[1] * sc * 0.62);   // 只留脑袋，约整身的 62%（能露出完整脸）
     petEl.style.height = (petEl.getAttribute('data-peek') === '1' ? peekH : Math.round(base[1] * sc)) + 'px';
   }
 
