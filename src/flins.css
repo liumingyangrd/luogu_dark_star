@@ -1744,6 +1744,31 @@ html.flins-light .message-block.left .message::after {
   border-right-color: #ffffff !important;
 }
 
+/* 私信左侧会话列表的 hover：洛谷写死 `.item:hover { background: #e8e8e8 }`（浅色主题的灰），
+   我们的正文是浅色 —— 鼠标一放上去就成了白字压浅灰，识别不了（用户截图）。
+   用 background 简写 + !important，连同背景图一起盖掉；顺手把「当前会话」的选中态收进来。
+   注意别加 transition：hover 里换底色时过渡会先闪一下洛谷那个灰。 */
+html.flins-dark .panel-content .list .item:hover,
+html.flins-dark .panel-content .list .item.active,
+html.flins-dark .panel-content .list .item.sel,
+html.flins-dark .panel-content .list .item.selected,
+html.flins-dark .panel-content .list .item.on,
+html.flins-dark .panel-content .list .item.cur {
+  background: rgba(var(--flins-accent-rgb), 0.12) !important;
+  box-shadow: inset 2px 0 0 rgba(var(--flins-accent-rgb), 0.7) !important;
+  color: var(--flins-text) !important;
+}
+html.flins-light .panel-content .list .item:hover,
+html.flins-light .panel-content .list .item.active,
+html.flins-light .panel-content .list .item.sel,
+html.flins-light .panel-content .list .item.selected,
+html.flins-light .panel-content .list .item.on,
+html.flins-light .panel-content .list .item.cur {
+  background: rgba(20, 40, 90, 0.07) !important;
+  box-shadow: inset 2px 0 0 rgba(52, 84, 148, 0.5) !important;
+  color: var(--flins-text) !important;
+}
+
  
 
  
