@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      2.0.2
+// @version      2.0.3
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -1523,8 +1523,10 @@
 
   // 追加样式：偷窥 / 聊天框 / 表情选择
   const PET_CSS2 = [
-    '.flins-pet[data-peek="1"]{height:96px!important;overflow:hidden;border-radius:48px 48px 12px 12px;bottom:0!important}',
-    '.flins-pet[data-peek="1"] .flins-pet-img,.flins-pet[data-peek="1"] svg{object-position:top center;transform:translateY(0)}',    '.flins-pet-menu .sub{padding:2px 10px;font-size:11px;color:rgba(150,162,196,.8)}',
+    '.flins-pet[data-peek="1"]{overflow:hidden;border-radius:46px 46px 0 0}',
+    '.flins-pet[data-peek="1"] .flins-pet-img{width:100%!important;height:auto!important;object-fit:initial!important;object-position:top center!important;display:block}',
+    '.flins-pet[data-peek="1"] svg{height:auto!important;width:100%!important}',
+        '.flins-pet-menu .sub{padding:2px 10px;font-size:11px;color:rgba(150,162,196,.8)}',
     '.flins-pet-menu .grid{display:grid;grid-template-columns:1fr 1fr;gap:2px}',
     '.flins-pet-menu .grid button{text-align:center;padding:5px 4px;font-size:11.5px}',    '.flins-pet-set{position:fixed;z-index:2147483001;left:50%;top:50%;transform:translate(-50%,-50%);width:420px;max-width:calc(100vw - 32px);padding:18px;border-radius:16px;background:rgba(13,19,44,.99);border:1px solid rgba(130,156,216,.35);box-shadow:0 30px 70px -30px rgba(0,0,0,.95)}',
     '.flins-pet-set-title{font:700 15px/1.3 var(--flins-font-body,system-ui);color:#EAF1FF;margin-bottom:6px}',
@@ -1647,7 +1649,8 @@
     const base = SZ[st] || SZ.s;
     petEl.setAttribute('data-size', st);
     petEl.style.width = Math.round(base[0] * sc) + 'px';
-    petEl.style.height = petEl.getAttribute('data-peek') === '1' ? Math.round(96 * sc) + 'px' : Math.round(base[1] * sc) + 'px';
+    const peekH = Math.round(base[1] * sc * 0.42);   // 只留脑袋，约整身的 42%
+    petEl.style.height = (petEl.getAttribute('data-peek') === '1' ? peekH : Math.round(base[1] * sc)) + 'px';
   }
 
   /** 饱食度决定体型 */
@@ -1948,10 +1951,22 @@
   }
 
   // ── 偷窥（同 enter_peek / exit_peek） ─────────────────────────────
+  /** 进入偷窥：只露一个脑袋，并贴死底边（同 _dock_bottom / enter_peek） */
   function petEnterPeek() {
     if (!petEl) return;
     petEl.setAttribute('data-peek', '1');
     petApplyScale();
+    const dock = () => {
+      if (!petEl) return;
+      // 用 bottom:0 锚定，比算 top 更稳（各种缩放/边框都不会差几像素）
+      const r = petEl.getBoundingClientRect();
+      petEl.style.left = Math.max(0, Math.min(window.innerWidth - r.width, r.left)) + 'px';
+      petEl.style.right = 'auto';
+      petEl.style.top = 'auto';
+      petEl.style.bottom = '0px';
+    };
+    dock();
+    requestAnimationFrame(dock);   // 图片/字体布局完成后再贴一次，避免差几像素
     cfg.petPeek = true;
     store.write(cfg);
     const l = petPick(PEEK_LINES);
@@ -2081,16 +2096,42 @@
       dragging = false;
       petEl.removeAttribute('data-drag');
       petEndPetting();
-      if (moved) {
-        petSavePos();
-        // 拖到底部 → 偷窥（同 _after_drag_release）
-        const r = petEl.getBoundingClientRect();
-        if (window.innerHeight - (r.top + r.height) <= 26) petEnterPeek();
-      } else if (!petting) {
-        const l = petPick(IDLE_LINES);
-        petSay(l[0], 4200, l[1]);
-        petFx('data-jump', 480);
+
+      // 偷窥态：点一下恢复全身（原版：抓着脑袋往上拽或点一下都弹回）
+      if (petEl.getAttribute('data-peek') === '1' && !moved) {
+        petExitPeek();
+        return;
       }
+      if (!moved) {
+        if (!petting) {
+          const l = petPick(IDLE_LINES);
+          petSay(l[0], 4200, l[1]);
+          petFx('data-jump', 480);
+        }
+        return;
+      }
+
+      // 四向贴边吸附；贴到底边 → 只露一个脑袋
+      const SNAP = 24;
+      const r = petEl.getBoundingClientRect();
+      const gapL = r.left;
+      const gapR = window.innerWidth - (r.left + r.width);
+      const gapT = r.top;
+      const gapB = window.innerHeight - (r.top + r.height);
+      const min = Math.min(gapL, gapR, gapT, gapB);
+      if (min <= SNAP) {
+        if (min === gapB) {
+          petEnterPeek();
+        } else if (min === gapL) {
+          petEl.style.left = '0px';
+        } else if (min === gapR) {
+          petEl.style.left = (window.innerWidth - r.width) + 'px';
+          petEl.style.right = 'auto';
+        } else {
+          petEl.style.top = '0px';
+        }
+      }
+      petSavePos();
     });
     // 滚轮缩放（同 wheelEvent）
     petEl.addEventListener('wheel', (e) => {
