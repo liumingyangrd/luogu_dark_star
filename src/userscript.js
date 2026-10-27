@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      2.1.0
+// @version      2.1.1
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -500,6 +500,46 @@
     return bar.querySelectorAll('a').length;
   }
 
+  /** 编辑器（CodeMirror 6）的语法配色。
+   *
+   *  洛谷的 IDE 用的是 CM6，但没给深色高亮主题 —— 打开题面里的 IDE，token 颜色还是
+   *  浅色那套（#770088 紫、#aa1111 红、#0000ff 蓝），在深色底上几乎看不见。
+   *  CM6 的高亮类名是构建时生成的（`ͼb`、`ͼe` 这种），按类名写 CSS 一升级就废，
+   *  所以在运行时按「算出来的颜色」处理：保留色相，只把太暗的往白里提，
+   *  提到跟底色对比够为止 —— 一律刷成正文色会把语法高亮抹平。 */
+  function patchEditorColors() {
+    if (!document.body || resolveMode() !== 'dark') {
+      return 0;
+    }
+    const ed = document.querySelector('.cm-editor');
+    if (!ed) {
+      return 0;
+    }
+    let n = 0;
+    const spans = ed.querySelectorAll('.cm-content .cm-line span');
+    for (const el of spans) {
+      if (!hasOwnText(el)) continue;
+      const fg = parseColor(getComputedStyle(el).color);
+      if (!fg) continue;
+      const bg = bgBehind(el);
+      const L1 = relLum([fg.r, fg.g, fg.b]);
+      const L2 = relLum(bg);
+      let ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+      if (ratio >= 4.5) continue;
+      let out = [fg.r, fg.g, fg.b];
+      for (let t = 0.2; t <= 1.0001; t += 0.15) {
+        out = mix([fg.r, fg.g, fg.b], [255, 255, 255], t);
+        const L3 = relLum(out);
+        ratio = (Math.max(L3, L2) + 0.05) / (Math.min(L3, L2) + 0.05);
+        if (ratio >= 5) break;
+      }
+      markFix(el, 'color', toHex(out));
+      n += 1;
+      if (n >= 600) break;
+    }
+    return n;
+  }
+
   function runPatches() {
     
     
@@ -509,6 +549,7 @@
     try { out.dim = patchLowContrast(); } catch (e) { errs.push('dim: ' + (e && e.message)); }
     try { out.tails = patchTriangleTails(); } catch (e) { errs.push('tails: ' + (e && e.message)); }
     try { out.actions = patchProblemActions(); } catch (e) { errs.push('actions: ' + (e && e.message)); }
+
     
     try { syncNavBounds(); } catch (e) { errs.push('navbounds: ' + (e && e.message)); }
     // 题号难度色：和「白块自愈 / 深色模式」无关，两形态都要跑
@@ -523,6 +564,8 @@
   function schedulePatch() {
     // 题号难度色独立于「白块自愈」与形态判断，先跑一遍
     try { if (cfg.pluginColorCompat) boostPluginColors(); } catch (e) { /* 忽略 */ }
+    // 编辑器的语法配色：跟「自动修补」开关无关，深色形态下必须修，否则代码是黑压黑
+    try { patchEditorColors(); } catch (e) { /* 忽略 */ }
     if (!cfg.autoPatch) return;
     if (resolveMode() !== 'dark') return;
     const now = Date.now();

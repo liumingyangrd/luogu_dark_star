@@ -600,18 +600,29 @@ html.flins-layout-flins .cm-editor .cm-gutters-before {
   border-right: 1px solid rgba(130, 156, 216, 0.18) !important;
 }
 html.flins-layout-flins .cm-editor .cm-gutters .cm-gutterElement {
-  color: var(--flins-text-dim) !important;
-  opacity: 0.82 !important;
+  /* 行号：洛谷用的是浅色主题的灰，压到 0.82 透明度后深色底上几乎看不见（issue #9） */
+  color: var(--flins-text-muted) !important;
+  opacity: 1 !important;
 }
 html.flins-layout-flins .cm-editor .cm-lineNumbers .cm-gutterElement {
   padding: 0 6px 0 8px !important;
   min-width: 28px !important;
   text-align: right !important;
 }
+html.flins-layout-flins .cm-editor .cm-activeLine {
+  background: rgba(var(--flins-accent-rgb), 0.07) !important;
+}
 html.flins-layout-flins .cm-editor .cm-activeLineGutter {
   background: rgba(96, 224, 240, 0.12) !important;
   color: var(--flins-accent-soft) !important;
   opacity: 1 !important;
+}
+html.flins-layout-flins .cm-editor .cm-selectionBackground,
+html.flins-layout-flins .cm-editor .cm-content ::selection {
+  background: rgba(var(--flins-accent-rgb), 0.26) !important;
+}
+html.flins-layout-flins .cm-editor .cm-cursor {
+  border-left-color: var(--flins-accent) !important;
 }
 html.flins-layout-flins .cm-editor .cm-foldGutter,
 html.flins-layout-flins .cm-editor .cm-foldGutter .cm-gutterElement {
