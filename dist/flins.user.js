@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      2.1.1.202610271835
+// @version      2.1.2.202610272042
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -15,6 +15,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
+// @grant        unsafeWindow
 // @run-at       document-start
 // ==/UserScript==
 
@@ -2368,12 +2369,17 @@
     '.flins-pm-body{min-width:0;flex:1 1 auto}',
     '.flins-pm-name{font-weight:650;color:#F2F4F8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.flins-pm-text{color:#A3AFCE;margin-top:2px;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
+    '.flins-pm-act{margin-top:7px;border:1px solid rgba(var(--flins-accent-rgb),.45);background:rgba(var(--flins-accent-rgb),.12);',
+    '  color:#90D0E0;font-size:12px;padding:4px 10px;border-radius:8px;cursor:pointer;font-family:inherit}',
+    '.flins-pm-act:hover{background:rgba(var(--flins-accent-rgb),.22);color:#F2F4F8}',
     '.flins-pm-close{flex:0 0 auto;border:0;background:transparent;color:#8B97B8;cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;border-radius:6px}',
     '.flins-pm-close:hover{color:#F2F4F8;background:rgba(255,255,255,.08)}',
     'html.flins-light .flins-pm-toast{background:rgba(255,255,255,.98);border-color:rgba(52,84,148,.22);color:#16203C;box-shadow:0 14px 40px -20px rgba(20,40,90,.35)}',
     'html.flins-light .flins-pm-name{color:#101A33}',
     'html.flins-light .flins-pm-text{color:#53628A}',
     'html.flins-light .flins-pm-close{color:#7C89A8}',
+    'html.flins-light .flins-pm-act{border-color:rgba(52,84,148,.35);background:rgba(52,84,148,.08);color:#1B4A8C}',
+    'html.flins-light .flins-pm-act:hover{background:rgba(52,84,148,.16);color:#101A33}',
   ].join('\n');
 
   let pmStarted = false;
@@ -2457,9 +2463,16 @@
       card.remove();
     });
     card.appendChild(avatar);
+    const reply = el('button', { class: 'flins-pm-act', type: 'button', text: '回复私信' });
+    reply.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.open('https://www.luogu.com.cn/chat?uid=' + uid, '_blank', 'noopener');
+      card.remove();
+    });
     card.appendChild(el('div', { class: 'flins-pm-body' }, [
       el('div', { class: 'flins-pm-name', text: name }),
       el('div', { class: 'flins-pm-text', text }),
+      reply,
     ]));
     card.appendChild(close);
     card.addEventListener('click', () => {
@@ -2675,6 +2688,7 @@
     };
 
     askUid().then((uid) => {
+      try { document.documentElement.setAttribute('data-flins-pm', uid ? 'uid:' + uid : 'uid:none'); } catch (e) { /* 忽略 */ }
       if (!uid) {
         return;
       }
@@ -2697,14 +2711,81 @@
           return;
         }
         e.source.postMessage({ __flinsPmUid: pmUid() || '' }, e.origin);
+        // 诊断用：iframe 那边活着才会来要 uid，数一下就知道桥有没有跑起来
+        try { window.__flinsPmUidAsks = (window.__flinsPmUidAsks || 0) + 1; } catch (err) { /* 忽略 */ }
         return;
       }
       if (typeof d.__flinsPmPayload === 'string') {
         pmHandlePayload(d.__flinsPmPayload);
       }
     });
+    pmPatchMessagePort();
     // 主页面只负责收，真正的连接在 fecdn 那个 iframe 里，这里不谎报「已连接」
     pmSetState('watch');
+  }
+
+  /** 主页面自己的 WS 桥也是走 MessagePort 的，有些页面（比如私信页本身）
+   *  消息直接从这里进来，不经过 iframe —— 顺手在原型上截一层当兜底。
+   *  只有油猴模式能拿到 unsafeWindow；扩展的隔离世界里截了也没用，跳过即可。 */
+  function pmPatchMessagePort() {
+    let W = null;
+    try {
+      W = typeof unsafeWindow !== 'undefined' ? unsafeWindow : null;
+    } catch (e) {
+      W = null;
+    }
+    if (!W || !W.MessagePort || !W.MessagePort.prototype) {
+      return;
+    }
+    const proto = W.MessagePort.prototype;
+    if (proto.__flinsPmPatched) {
+      return;
+    }
+    proto.__flinsPmPatched = true;
+    const origAdd = proto.addEventListener;
+    const wrapFn = (fn) => {
+      if (typeof fn !== 'function' || fn.__flinsPmWrap) {
+        return fn;
+      }
+      const wrapped = function (e) {
+        try { pmHandleEnvelope(e.data); } catch (err) { /* 忽略 */ }
+        return fn.call(this, e);
+      };
+      wrapped.__flinsPmWrap = true;
+      return wrapped;
+    };
+    proto.addEventListener = function (type, fn, ...rest) {
+      if (type === 'message') {
+        return origAdd.call(this, type, wrapFn(fn), ...rest);
+      }
+      return origAdd.call(this, type, fn, ...rest);
+    };
+    const desc = Object.getOwnPropertyDescriptor(proto, 'onmessage');
+    if (desc && desc.set) {
+      Object.defineProperty(proto, 'onmessage', {
+        get: desc.get,
+        set(fn) {
+          return desc.set.call(this, wrapFn(fn));
+        },
+      });
+    }
+  }
+
+  /** MessagePort 里的原始信封：{ type:'APPLY', argumentList:[channel, 'message', payload] } */
+  function pmHandleEnvelope(data) {
+    if (!data || typeof data !== 'object' || data.type !== 'APPLY') {
+      return;
+    }
+    const list = data.argumentList;
+    if (!Array.isArray(list) || list.length < 3) {
+      return;
+    }
+    const evt = list[1] && list[1].value;
+    const payload = list[2] && list[2].value;
+    if (evt !== 'message' || typeof payload !== 'string') {
+      return;
+    }
+    pmHandlePayload(payload);
   }
 
   /** 开关一变就跟着起停 */
@@ -2723,13 +2804,22 @@
     }
     pmStarted = true;
     pmSetState('connecting');
+    // 诊断标记写在 <html data-flins-pm="..."> 上：iframe 跨域，父页面读不到它的 JS 变量，
+    // 但 DOM 是能通过 CDP 从外面读的，排查「桥到底有没有跑」就靠它。
+    const mark = (v) => {
+      try { document.documentElement.setAttribute('data-flins-pm', v); } catch (e) { /* 忽略 */ }
+    };
+    mark('boot');
     try {
       if (isFrame) {
         pmBridgeInFrame();
+        mark('frame-bridge');
       } else {
         pmBindMainFrame();
+        mark('main-watch');
       }
     } catch (e) {
+      mark('error:' + (e && e.message));
       pmSetState('retry');
     }
   }
@@ -2778,6 +2868,11 @@
   
   
   function boot() {
+    // fecdn 的 worker iframe 里不需要主题（那是个 0×0 的桥页面），只需要私信桥。
+    if (window !== window.top && /^fecdn\.luogu\.com(\.cn)?$/.test(location.hostname)) {
+      try { pmSync(); } catch (e) { /* 忽略 */ }
+      return;
+    }
     const steps = [
       
       () => addStyle(THEME_CSS, STYLE_ID),

@@ -145,7 +145,9 @@ const manifest = {
     {
       matches: ['*://*.luogu.com.cn/*', '*://*.luogu.com/*', '*://*.luogu.me/*'],
       run_at: 'document_start',
-      all_frames: false,
+      // ⚠️ 必须是 true：洛谷把私信 WS 放在 fecdn 的 iframe（hub.frame.html）里，
+      //    只在顶层注入的话，那个 iframe 里就没有我们的代码，私信桥永远起不来。
+      all_frames: true,
       js: ['content.js'],
     },
   ],
