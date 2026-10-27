@@ -4,7 +4,7 @@
 // @homepageURL  https://github.com/liumingyangrd/luogu_dark_star
 // @updateURL    https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
 // @downloadURL  https://raw.githubusercontent.com/liumingyangrd/luogu_dark_star/main/dist/flins.user.js
-// @version      2.1.2.202610272042
+// @version      2.1.3.202610272050
 // @description  为洛谷换上一套深色主题：深靛蓝夜色 + 冷蓝焰 + 金色新月 + 灯塔剪影。支持自定义背景图片（内置 / 链接 / 本地上传）、深浅两套形态、四种强调色与毛玻璃开关。
 // @author       liumingyangrd
 // @license      MIT
@@ -770,7 +770,7 @@
     '  background-size:cover, auto;background-position:center, center;background-repeat:no-repeat, no-repeat;',
     '  box-shadow:0 10px 26px -12px #000,0 0 0 1px rgba(255,255,255,.04) inset;',
     '  backdrop-filter:blur(10px);display:grid;place-items:center;',
-    '  transition:transform .18s ease,box-shadow .18s ease}',
+    '  transition:transform .24s cubic-bezier(.16,1,.3,1),box-shadow .24s cubic-bezier(.16,1,.3,1)}',
      
     '.flins-fab[data-img="1"] svg{display:none}',
     '.flins-fab:hover{transform:translateY(-2px);box-shadow:0 14px 30px -12px #000}',
@@ -783,8 +783,8 @@
     '  color:#E6EBFB;font:13px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;',
     '  box-shadow:0 30px 70px -24px #000,0 0 0 1px rgba(255,255,255,.04) inset;',
     '  backdrop-filter:blur(16px) saturate(1.2);',
-    '  opacity:0;visibility:hidden;transform:translateY(10px) scale(.985);',
-    '  transition:opacity .18s ease,transform .18s ease,visibility .18s}',
+    '  opacity:0;visibility:hidden;transform:translateY(14px) scale(.975);',
+    '  transition:opacity .22s cubic-bezier(.22,.61,.36,1),transform .32s cubic-bezier(.16,1,.3,1),visibility .32s}',
      
     '.flins-panel[data-open="1"]{opacity:1;visibility:visible;transform:none}',
     '.flins-panel[data-open="1"] *{visibility:visible}',
@@ -2356,14 +2356,21 @@
   const PM_WORKER_FALLBACK = 'https://fecdn.luogu.com.cn/columba/static.284b6b4b2a29779e.hub.worker.js';
 
   const PM_CSS = [
-    '.flins-pm-stack{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:flex;flex-direction:column;gap:10px;pointer-events:none}',
+    '.flins-pm-stack{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:flex;flex-direction:column;pointer-events:none}',
     // 设置面板开着的时候往左让开，不然会压在面板底下（面板 330px + 右边距）
     'body:has(.flins-panel[data-open="1"]) .flins-pm-stack{right:362px}',
     '.flins-pm-toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;width:300px;padding:10px 12px;border-radius:14px;',
     '  background:rgba(14,20,48,.96);border:1px solid rgba(150,200,245,.24);box-shadow:0 14px 40px -18px rgba(0,0,0,.9);',
-    '  color:#E6EBFB;font-size:13px;line-height:1.5;cursor:pointer;transform:translateY(8px);opacity:0;',
-    '  transition:transform .18s ease,opacity .18s ease}',
-    '.flins-pm-toast[data-in="1"]{transform:none;opacity:1}',
+    '  color:#E6EBFB;font-size:13px;line-height:1.5;cursor:pointer;overflow:hidden;transform-origin:100% 100%;',
+    // 进场用 animation（插入即播，不依赖 rAF/定时器）。**不要加 fill-mode**：
+    // 万一动画没跑（后台标签、被系统关掉动画），元素会停在 from 的透明态，卡片就永远看不见了。
+    // 出场用 transition（要配合高度收起，animation 的 fill 会盖住过渡）。
+    '  animation:flins-pm-in .36s cubic-bezier(.16,1,.3,1);',
+    '  transition:transform .3s cubic-bezier(.22,.61,.36,1),opacity .24s cubic-bezier(.22,.61,.36,1),',
+    '    height .26s cubic-bezier(.4,0,.2,1),margin .26s cubic-bezier(.4,0,.2,1),padding .26s cubic-bezier(.4,0,.2,1)}',
+    '@keyframes flins-pm-in{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}',
+    '.flins-pm-toast + .flins-pm-toast{margin-top:10px}',
+    '.flins-pm-toast[data-out="1"]{animation:none;opacity:0;transform:translateX(16px) scale(.95);pointer-events:none}',
     '.flins-pm-toast:hover{border-color:rgba(96,224,240,.5)}',
     '.flins-pm-avatar{width:38px;height:38px;border-radius:10px;object-fit:cover;flex:0 0 auto;background:rgba(255,255,255,.06)}',
     '.flins-pm-body{min-width:0;flex:1 1 auto}',
@@ -2435,6 +2442,23 @@
     return '未连接';
   }
 
+  /** 让卡片平滑退场：先钉住当前高度，再收到 0 —— 否则它一消失，
+   *  下面几张会「啪」地跳上去，看着很糙。 */
+  function pmRemoveToast(card) {
+    if (!card || card.dataset.out === '1') {
+      return;
+    }
+    card.dataset.out = '1';
+    card.style.height = card.offsetHeight + 'px';
+    card.style.marginTop = '10px';
+    void card.offsetHeight;            // 强制回流，让 height 从具体值开始过渡
+    card.style.height = '0px';
+    card.style.marginTop = '0px';
+    card.style.paddingTop = '0px';
+    card.style.paddingBottom = '0px';
+    setTimeout(() => card.remove(), 340);
+  }
+
   /** 右下角那张卡片 */
   function pmToast(msg) {
     if (!document.body) {
@@ -2460,14 +2484,14 @@
     const close = el('button', { class: 'flins-pm-close', type: 'button', text: '×', title: '关闭' });
     close.addEventListener('click', (e) => {
       e.stopPropagation();
-      card.remove();
+      pmRemoveToast(card);
     });
     card.appendChild(avatar);
     const reply = el('button', { class: 'flins-pm-act', type: 'button', text: '回复私信' });
     reply.addEventListener('click', (e) => {
       e.stopPropagation();
       window.open('https://www.luogu.com.cn/chat?uid=' + uid, '_blank', 'noopener');
-      card.remove();
+      pmRemoveToast(card);
     });
     card.appendChild(el('div', { class: 'flins-pm-body' }, [
       el('div', { class: 'flins-pm-name', text: name }),
@@ -2481,17 +2505,17 @@
     // 鼠标停上去就暂停自动关闭，跟聊天软件一个手感
     const arm = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => card.remove(), 9000);
+      timer = setTimeout(() => pmRemoveToast(card), 9000);
     };
     card.addEventListener('pointerenter', () => clearTimeout(timer));
     card.addEventListener('pointerleave', arm);
 
     pmStackEl.appendChild(card);
-    requestAnimationFrame(() => card.setAttribute('data-in', '1'));
     arm();
     // 最多堆 4 张，老的先走
-    while (pmStackEl.children.length > 4) {
-      pmStackEl.firstElementChild.remove();
+    const alive = [...pmStackEl.children].filter((n) => n.dataset.out !== '1');
+    while (alive.length > 4) {
+      pmRemoveToast(alive.shift());
     }
   }
 
