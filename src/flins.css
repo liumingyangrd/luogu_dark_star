@@ -165,6 +165,21 @@ body {
   background: rgba(var(--flins-accent-rgb), 0.32);
   color: var(--flins-selection-fg);
 }
+/* Prism 给代码块写死了选中底色：
+     pre[class*="language-"] *::selection { background: #e5e5e6; color: inherit }
+   属性选择器 + 伪元素的特异性比上面那条 `::selection` 高，于是深色形态下选中一段代码
+   会变成「浅灰块 + 浅色字」，整段糊掉。这里按同样的特异性补回来。
+   只改底色、不动文字色 —— `color: inherit` 会把语法高亮抹平。 */
+pre[class*="language-"]::selection,
+pre[class*="language-"] *::selection,
+code[class*="language-"]::selection,
+code[class*="language-"] *::selection,
+.code-container ::selection,
+.code-container::selection,
+.lfe-code ::selection,
+.lfe-code::selection {
+  background: rgba(var(--flins-accent-rgb), 0.34) !important;
+}
 
  
 * {
