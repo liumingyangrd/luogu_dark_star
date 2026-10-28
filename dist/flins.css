@@ -322,6 +322,10 @@ html.flins-light {
   --flins-code-bg: rgba(6, 9, 24, 0.86);
   --flins-code-text: #D7E0F5;
   --flins-code-gutter: rgba(255, 255, 255, 0.018);
+  --flins-code-gutter-bg: rgba(11, 16, 39, 0.78);
+  --flins-code-gutter-fg: #A3AFCE;
+  --flins-code-border: rgba(130, 156, 216, 0.18);
+  --flins-code-active-bg: rgba(96, 224, 240, 0.12);
   --flins-inline-bg: rgba(var(--flins-accent-rgb), 0.12);
   --flins-inline-fg: var(--flins-flame-200);
 
@@ -877,48 +881,52 @@ code[class*="language-"] {
 .ace-tm .ace_selection { background: rgba(var(--flins-accent-rgb), 0.25) !important; }
 
  
-html.flins-layout-flins .cm-editor,
-html.flins-layout-flins .cm-scroller {
-  background: rgba(12, 18, 42, 0.44) !important;
+/* 编辑器（CodeMirror 6）。
+   ⚠️ 这里**不能**再挂 `html.flins-layout-flins`：经典版式下整块规则会整体失效，
+   于是行号列露出洛谷默认的 #f5f5f5 白底、编辑区变成全透明（用户截图）。
+   颜色一律走变量，形态（深/浅）在两个 token 块里各给一份。 */
+.cm-editor,
+.cm-scroller {
+  background: var(--flins-code-bg) !important;
   color: var(--flins-code-text) !important;
 }
-html.flins-layout-flins .cm-editor .cm-gutters,
-html.flins-layout-flins .cm-editor .cm-gutters-before {
-  background: rgba(11, 16, 39, 0.78) !important;
-  color: var(--flins-text-dim) !important;
-  border-right: 1px solid rgba(130, 156, 216, 0.18) !important;
+.cm-editor .cm-gutters,
+.cm-editor .cm-gutters-before {
+  background: var(--flins-code-gutter-bg) !important;
+  color: var(--flins-code-gutter-fg) !important;
+  border-right: 1px solid var(--flins-code-border) !important;
 }
-html.flins-layout-flins .cm-editor .cm-gutters .cm-gutterElement {
+.cm-editor .cm-gutters .cm-gutterElement {
   /* 行号：洛谷用的是浅色主题的灰，压到 0.82 透明度后深色底上几乎看不见（issue #9） */
-  color: var(--flins-text-muted) !important;
+  color: var(--flins-code-gutter-fg) !important;
   opacity: 1 !important;
 }
-html.flins-layout-flins .cm-editor .cm-lineNumbers .cm-gutterElement {
+.cm-editor .cm-lineNumbers .cm-gutterElement {
   padding: 0 6px 0 8px !important;
   min-width: 28px !important;
   text-align: right !important;
 }
-html.flins-layout-flins .cm-editor .cm-activeLine {
+.cm-editor .cm-activeLine {
   background: rgba(var(--flins-accent-rgb), 0.07) !important;
 }
-html.flins-layout-flins .cm-editor .cm-activeLineGutter {
-  background: rgba(96, 224, 240, 0.12) !important;
+.cm-editor .cm-activeLineGutter {
+  background: var(--flins-code-active-bg) !important;
   color: var(--flins-accent-soft) !important;
   opacity: 1 !important;
 }
-html.flins-layout-flins .cm-editor .cm-selectionBackground,
-html.flins-layout-flins .cm-editor .cm-content ::selection {
+.cm-editor .cm-selectionBackground,
+.cm-editor .cm-content ::selection {
   background: rgba(var(--flins-accent-rgb), 0.26) !important;
 }
-html.flins-layout-flins .cm-editor .cm-cursor {
+.cm-editor .cm-cursor {
   border-left-color: var(--flins-accent) !important;
 }
-html.flins-layout-flins .cm-editor .cm-foldGutter,
-html.flins-layout-flins .cm-editor .cm-foldGutter .cm-gutterElement {
+.cm-editor .cm-foldGutter,
+.cm-editor .cm-foldGutter .cm-gutterElement {
   background: transparent !important;
-  color: var(--flins-text-dim) !important;
+  color: var(--flins-code-gutter-fg) !important;
 }
-html.flins-layout-flins .cm-editor .cm-foldPlaceholder {
+.cm-editor .cm-foldPlaceholder {
   background: rgba(var(--flins-accent-rgb), 0.12) !important;
   border-color: rgba(var(--flins-accent-rgb), 0.4) !important;
   color: var(--flins-accent-soft) !important;
@@ -2234,6 +2242,10 @@ html.flins-light {
   --flins-code-bg: #F3F7FE;
   --flins-code-text: #22304E;
   --flins-code-gutter: rgba(20, 40, 90, 0.035);
+  --flins-code-gutter-bg: rgba(20, 40, 90, 0.05);
+  --flins-code-gutter-fg: #4A5677;
+  --flins-code-border: rgba(20, 40, 90, 0.16);
+  --flins-code-active-bg: rgba(52, 84, 148, 0.10);
   --flins-inline-bg: rgba(14, 143, 152, 0.12);
   --flins-inline-fg: #0B6E76;
   --flins-field-bg: rgba(255, 255, 255, 0.92);
